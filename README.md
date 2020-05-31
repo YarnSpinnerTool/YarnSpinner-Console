@@ -2,7 +2,7 @@
 
 **`ysc`** is the command-line tool for working with [Yarn Spinner](https://github.com/YarnSpinnerTool/YarnSpinner) programs.
 
-
+**NOTE:** This tool is in early preview, and is not ready for production use. If you're new to Yarn Spinner, we recommend starting with the main [Yarn Spinner](https://yarnspinner.dev) package.
 
 ## Compiling Scripts
 
