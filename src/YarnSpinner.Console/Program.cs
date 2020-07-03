@@ -9,6 +9,7 @@
     using System.Text;
     using Yarn;
     using Yarn.Compiler;
+    using Yarn.Compiler.Upgrader;
 
     public class ConsoleApp
     {
@@ -58,10 +59,32 @@
 
             runCommand.Handler = CommandHandler.Create<FileInfo[], string, bool>(RunFiles);
 
+            var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to upgrade")
+                {
+                    Arity = ArgumentArity.OneOrMore,
+                };
+
+                upgradeCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var upgradeTypeOption = new Option<int>("-t", "Upgrade type");
+                upgradeTypeOption.AddAlias("--upgrade-type");
+                upgradeTypeOption.Argument.SetDefaultValue(1);
+                upgradeTypeOption.FromAmong("1");
+                upgradeTypeOption.Argument.Arity = ArgumentArity.ExactlyOne;
+                upgradeCommand.AddOption(upgradeTypeOption);
+            }
+
+            upgradeCommand.Handler = CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeFiles);
+
             // Create a root command with our two subcommands
-            var rootCommand = new RootCommand();
-            rootCommand.Add(runCommand);
-            rootCommand.Add(compileCommand);
+            var rootCommand = new RootCommand
+            {
+                runCommand,
+                compileCommand,
+                upgradeCommand,
+            };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
 
@@ -70,6 +93,48 @@
 
             // Parse the incoming args and invoke the handler
             return rootCommand.InvokeAsync(args).Result;
+        }
+
+        private static void UpgradeFiles(FileInfo[] inputs, UpgradeType upgradeType)
+        {
+            foreach (var file in inputs)
+            {
+                var content = File.ReadAllText(file.FullName);
+
+                try
+                {
+                    var replacementContent = LanguageUpgrader.UpgradeScript(
+                        content,
+                        file.Name,
+                        upgradeType,
+                        out IEnumerable<Replacement> replacements);
+
+                    if (replacements.Count() == 0)
+                    {
+                        // Nothing to do! Don't write out the file.
+                        Log.Info($"{file.FullName}: No upgrades required.");
+                    }
+                    else
+                    {
+                        // Write out the modified text
+                        File.WriteAllText(file.FullName, replacementContent);
+
+                        // Log each replacement that we did
+                        foreach (var replacement in replacements)
+                        {
+                            Log.Info($"{file.FullName}:{replacement.StartLine} \"{replacement.OriginalText}\" -> \"{replacement.ReplacementText}\"");
+                        }
+                    }
+                }
+                catch (ParseException e)
+                {
+                    Log.Error($"Cannot convert {file.FullName}: parse error encountered. {e.Message}");
+                }
+                catch (UpgradeException e)
+                {
+                    Log.Error($"Cannot convert {file.FullName}: upgrade error encounterd. {e.Message}");
+                }
+            }
         }
 
         private static void RunFiles(FileInfo[] inputs, string startNode, bool autoAdvance)
