@@ -1,4 +1,4 @@
-﻿namespace YarnSpinnerConsole
+namespace YarnSpinnerConsole
 {
     using System;
     using System.Collections.Generic;
@@ -26,16 +26,28 @@
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 compileCommand.AddArgument(inputsArgument.ExistingOnly());
 
-                compileCommand.AddOption(new Option<bool>("--merge", "Merge output into a single file (default: compile into separate files)"));
-
                 var outputOption = new Option<DirectoryInfo>("-o", "Output directory (default: current directory)");
                 outputOption.AddAlias("--output-directory");
                 outputOption.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
-
                 compileCommand.AddOption(outputOption.ExistingOnly());
+
+                var outputFilenameOption = new Option<string>("-n", "Output filename (default: Output.yarnc)");
+                outputFilenameOption.AddAlias("--output-name");
+                outputFilenameOption.Argument.SetDefaultValue("Output.yarnc");
+                compileCommand.AddOption(outputFilenameOption);
+
+                var outputStringTableOption = new Option<string>("-t", "Output string table filename (default: Output.csv");
+                outputStringTableOption.AddAlias("--output-string-table-name");
+                outputStringTableOption.Argument.SetDefaultValue("Output.csv");
+                compileCommand.AddOption(outputStringTableOption);
+
+                // TODO: maybe this could be derived from the value of
+                // OutputName? like if you said "Test.yarnc", it'd be
+                // "Test.csv", but if you left it as the default
+                // "Output.yarnc", it would be "Output.csv"
             }
 
-            compileCommand.Handler = CommandHandler.Create<FileInfo[], bool, DirectoryInfo>(CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string>(CompileFiles);
 
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {
@@ -57,7 +69,7 @@
                 runCommand.AddOption(autoAdvance);
             }
 
-            runCommand.Handler = CommandHandler.Create<FileInfo[], string, bool>(RunFiles);
+            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool>(RunFiles);
 
             var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
             {
@@ -75,6 +87,8 @@
                 upgradeTypeOption.Argument.Arity = ArgumentArity.ExactlyOne;
                 upgradeCommand.AddOption(upgradeTypeOption);
             }
+
+            upgradeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeFiles);
 
             upgradeCommand.Handler = CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeFiles);
 
@@ -97,42 +111,48 @@
 
         private static void UpgradeFiles(FileInfo[] inputs, UpgradeType upgradeType)
         {
-            foreach (var file in inputs)
+            var upgradeJob = new UpgradeJob
             {
-                var content = File.ReadAllText(file.FullName);
-
-                try
+                UpgradeType = UpgradeType.Version1to2,
+                Files = inputs.Select(inputFileInfo => new CompilationJob.File
                 {
-                    var replacementContent = LanguageUpgrader.UpgradeScript(
-                        content,
-                        file.Name,
-                        upgradeType,
-                        out IEnumerable<Replacement> replacements);
+                    FileName = inputFileInfo.FullName,
+                    Source = File.ReadAllText(inputFileInfo.FullName),
+                }).ToList(),
+            };
 
-                    if (replacements.Count() == 0)
-                    {
-                        // Nothing to do! Don't write out the file.
-                        Log.Info($"{file.FullName}: No upgrades required.");
-                    }
-                    else
-                    {
-                        // Write out the modified text
-                        File.WriteAllText(file.FullName, replacementContent);
+            UpgradeResult upgradeResult;
+            try
+            {
+                upgradeResult = LanguageUpgrader.Upgrade(upgradeJob);
+            }
+            catch (ParseException e)
+            {
+                Log.Error($"Cannot upgrade files: parse error encountered. {e.Message}");
+                return;
+            }
+            catch (UpgradeException e)
+            {
+                Log.Error($"Cannot upgrade files: upgrade error encounterd. {e.Message}");
+                return;
+            }
 
-                        // Log each replacement that we did
-                        foreach (var replacement in replacements)
-                        {
-                            Log.Info($"{file.FullName}:{replacement.StartLine} \"{replacement.OriginalText}\" -> \"{replacement.ReplacementText}\"");
-                        }
-                    }
+            foreach (var upgradedFile in upgradeResult.Files)
+            {
+                if (upgradedFile.Replacements.Count() == 0)
+                {
+                    Log.Info($"{upgradedFile.Path}: No upgrades required.");
                 }
-                catch (ParseException e)
+                else
                 {
-                    Log.Error($"Cannot convert {file.FullName}: parse error encountered. {e.Message}");
-                }
-                catch (UpgradeException e)
-                {
-                    Log.Error($"Cannot convert {file.FullName}: upgrade error encounterd. {e.Message}");
+                    // Write out the modified text
+                    File.WriteAllText(upgradedFile.Path, upgradedFile.UpgradedSource);
+
+                    // Log each replacement that we did
+                    foreach (var replacement in upgradedFile.Replacements)
+                    {
+                        Log.Info($"{upgradedFile.Path}:{replacement.StartLine} \"{replacement.OriginalText}\" -> \"{replacement.ReplacementText}\"");
+                    }
                 }
             }
         }
@@ -141,216 +161,158 @@
         {
             // this will be a new interactive command for running yarn
             // stories will compile and then run them
-            var results = CompileProgram(inputs, true);
+            var results = CompileProgram(inputs);
 
             string TextForLine(string lineID)
             {
-                var text = results[0].stringTable[lineID];
-
-                return text.text ?? lineID;
+                return results.StringTable[lineID].text;
             }
 
-            if (results.Count == 1)
+            var program = results.Program;
+
+            if (program.Nodes.ContainsKey(startNode))
             {
-                var program = results[0].program;
-
-                if (program.Nodes.ContainsKey(startNode))
+                var storage = new Yarn.MemoryVariableStore();
+                var dialogue = new Yarn.Dialogue(storage)
                 {
-                    var storage = new Yarn.MemoryVariableStore();
-                    var dialogue = new Yarn.Dialogue(storage)
+                    LogDebugMessage = (m) => Log.Info(m),
+                    LogErrorMessage = (m) => Log.Error(m),
+                };
+
+                dialogue.SetProgram(program);
+                dialogue.SetNode(startNode);
+
+                void CommandHandler(Yarn.Command command)
+                {
+                    Log.Info($"Received command: {command.Text}");
+                }
+
+                void LineHandler(Yarn.Line line)
+                {
+                    if (autoAdvance)
                     {
-                        LogDebugMessage = (m) => Log.Info(m),
-                        LogErrorMessage = (m) => Log.Error(m),
-                    };
-
-                    dialogue.SetProgram(program);
-                    dialogue.SetNode(startNode);
-
-                    Dialogue.HandlerExecutionType CommandHandler(Yarn.Command command)
-                    {
-                        Log.Info($"Received command: {command.Text}");
-
-                        return Yarn.Dialogue.HandlerExecutionType.ContinueExecution;
+                        Console.WriteLine(TextForLine(line.ID));
                     }
-
-                    Dialogue.HandlerExecutionType LineHandler(Yarn.Line line)
+                    else
                     {
-                        if (autoAdvance)
-                        {
-                            Console.WriteLine(TextForLine(line.ID));
-                        }
-                        else
-                        {
-                            Console.Write(TextForLine(line.ID));
-                            Console.ReadLine();
-                        }
-
-                        return Yarn.Dialogue.HandlerExecutionType.ContinueExecution;
-                    }
-
-                    void OptionsHandler(Yarn.OptionSet options)
-                    {
-                        Log.Info($"Received option group");
-
-                        int count = 0;
-                        foreach (var option in options.Options)
-                        {
-                            Console.WriteLine($"{count}: {TextForLine(option.Line.ID)}");
-                            count += 1;
-                        }
-
-                        Console.WriteLine("Select an option to continue");
-
-                        int number;
-                        while (int.TryParse(Console.ReadLine(), out number) == false)
-                        {
-                            Console.WriteLine($"Select an option between 0 and {options.Options.Length - 1} to continue");
-                        }
-
-                        // rather than just trapping every possibility we
-                        // just mash it into shape
-                        number %= options.Options.Length;
-
-                        if (number < 0)
-                        {
-                            number *= -1;
-                        }
-
-                        Log.Info($"Selecting option {number}");
-
-                        dialogue.SetSelectedOption(number);
-                    }
-
-                    Dialogue.HandlerExecutionType NodeCompleteHandler(string completedNodeName)
-                    {
-                        Log.Info($"Completed '{completedNodeName}' node");
-                        return Yarn.Dialogue.HandlerExecutionType.ContinueExecution;
-                    }
-
-                    void DialogueCompleteHandler()
-                    {
-                        Log.Info("Dialogue Complete");
-                    }
-
-                    dialogue.lineHandler = LineHandler;
-                    dialogue.commandHandler = CommandHandler;
-                    dialogue.optionsHandler = OptionsHandler;
-                    dialogue.nodeCompleteHandler = NodeCompleteHandler;
-                    dialogue.dialogueCompleteHandler = DialogueCompleteHandler;
-
-                    // libraries can't be customised in YarnSpinner 1.x.y
-                    // this means any undefined function will throw an
-                    // exception we can't handle so the best we can do is
-                    // capture any undefined function exceptions future
-                    // versions ideally will allow us to capture undefined
-                    // funcs and we will then allow the user to determine
-                    // what should happen for now though, behold my
-                    // terrible hack
-                    try
-                    {
-                        do
-                        {
-                            dialogue.Continue();
-                        }
-                        while (dialogue.IsActive);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        Log.Fatal($"Undefined function encountered: {ex.Message}");
+                        Console.Write(TextForLine(line.ID));
+                        Console.ReadLine();
                     }
                 }
-                else
+
+                void OptionsHandler(Yarn.OptionSet options)
                 {
-                    Log.Error($"Unable to locate a node named {startNode} to begin. Aborting");
+                    Log.Info($"Received option group");
+
+                    int count = 0;
+                    foreach (var option in options.Options)
+                    {
+                        Console.WriteLine($"{count}: {TextForLine(option.Line.ID)}");
+                        count += 1;
+                    }
+
+                    Console.WriteLine("Select an option to continue");
+
+                    int number;
+                    while (int.TryParse(Console.ReadLine(), out number) == false)
+                    {
+                        Console.WriteLine($"Select an option between 0 and {options.Options.Length - 1} to continue");
+                    }
+
+                    // rather than just trapping every possibility we
+                    // just mash it into shape
+                    number %= options.Options.Length;
+
+                    if (number < 0)
+                    {
+                        number *= -1;
+                    }
+
+                    Log.Info($"Selecting option {number}");
+
+                    dialogue.SetSelectedOption(number);
                 }
+
+                void NodeCompleteHandler(string completedNodeName)
+                {
+                    Log.Info($"Completed '{completedNodeName}' node");
+                }
+
+                void DialogueCompleteHandler()
+                {
+                    Log.Info("Dialogue Complete");
+                }
+
+                dialogue.LineHandler = LineHandler;
+                dialogue.CommandHandler = CommandHandler;
+                dialogue.OptionsHandler = OptionsHandler;
+                dialogue.NodeCompleteHandler = NodeCompleteHandler;
+                dialogue.DialogueCompleteHandler = DialogueCompleteHandler;
+
+                try
+                {
+                    do
+                    {
+                        dialogue.Continue();
+                    }
+                    while (dialogue.IsActive);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Log.Fatal($"Undefined function encountered: {ex.Message}");
+                }
+            }
+            else
+            {
+                Log.Error($"Unable to locate a node named {startNode} to begin. Aborting");
             }
         }
 
         // compiles a given yarn story designed to be called by runners or
         // the generic compile command does no writing
-        private static List<(Program program, IDictionary<string, StringInfo> stringTable)> CompileProgram(FileInfo[] inputs, bool merge)
+        private static CompilationResult CompileProgram(FileInfo[] inputs)
         {
-            // The list of files that failed to compile
-            var failures = new List<FileInfo>();
-
             // The list of all files and their associated compiled results
             var results = new List<(FileInfo file, Program program, IDictionary<string, StringInfo> stringTable)>();
 
-            foreach (var file in inputs)
+            var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
+
+            CompilationResult compilationResult;
+
+            try
             {
-                Yarn.Program program;
-                IDictionary<string, StringInfo> newStringTable;
-                try
-                {
-                    Compiler.CompileFile(file.FullName, out program, out newStringTable);
-                }
-                catch (Exception e)
-                {
-                    Log.Error($"{file.FullName}: {e.Message}");
-                    failures.Add(file);
-                    continue;
-                }
-
-                results.Add((file, program, newStringTable));
+                compilationResult = Compiler.Compile(compilationJob);
             }
-
-            if (failures.Count > 0)
+            catch (Exception e)
             {
                 var errorBuilder = new StringBuilder();
-                errorBuilder.AppendLine("Aborting compile because the following files encountered an error:");
-                foreach (var failure in failures)
-                {
-                    errorBuilder.AppendLine($" - {failure.Name}");
-                }
+
+                errorBuilder.AppendLine("Failed to compile because of the following error:");
+                errorBuilder.AppendLine(e.ToString());
 
                 Log.Error(errorBuilder.ToString());
                 Environment.Exit(1);
-                return null;
+
+                // Environment.Exit will stop the program before here;
+                // throw an exception so the compiler doesn't wonder why
+                // we're not returning a value.
+                throw new Exception();
             }
 
-            var output = new List<(Program program, IDictionary<string, StringInfo> stringTable)>();
-            if (merge)
-            {
-                var mergedResult = MergeResults(results);
-
-                output.Add((mergedResult.Item1, mergedResult.Item2));
-            }
-            else
-            {
-                // We're wanting each compilation result separately
-                foreach (var resultEntry in results)
-                {
-                    output.Add((resultEntry.program, resultEntry.stringTable));
-                }
-            }
-
-            return output;
+            return compilationResult;
         }
 
-        private static void CompileFiles(FileInfo[] inputs, bool merge, DirectoryInfo outputDirectory)
+        private static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName)
         {
-            var compiledResults = CompileProgram(inputs, merge);
-            var zippedResults = compiledResults.Zip(inputs, (r, f) => new { result = r, file = f });
+            var compiledResults = CompileProgram(inputs);
 
-            foreach (var resultEntry in zippedResults)
-            {
-                WriteResult(
-                    resultEntry.result.program,
-                    resultEntry.result.stringTable,
-                    outputDirectory,
-                    resultEntry.file.Name ?? "output");
-            }
-        }
-
-        private static void WriteResult(Program program, IDictionary<string, StringInfo> stringTable, DirectoryInfo output, string fileName)
-        {
-            var programOutputPath = Path.Combine(output.FullName, fileName + ".yarnc");
-            var stringTableOutputPath = Path.Combine(output.FullName, fileName + ".csv");
+            var programOutputPath = Path.Combine(outputDirectory.FullName, outputName);
+            var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
 
             using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
             {
-                program.WriteTo(codedStream);
+                compiledResults.Program.WriteTo(codedStream);
             }
 
             Log.Info($"Wrote {programOutputPath}");
@@ -365,7 +327,7 @@
                     writer, // write into this stream
                     configuration); // use this configuration
 
-                var lines = stringTable.Select(x => new
+                var lines = compiledResults.StringTable.Select(x => new
                 {
                     id = x.Key,
                     text = x.Value.text,
@@ -378,45 +340,6 @@
             }
 
             Log.Info($"Wrote {stringTableOutputPath}");
-        }
-
-        private static (Program, IDictionary<string, StringInfo>) MergeResults(List<(FileInfo file, Program program, IDictionary<string, StringInfo> stringTable)> result)
-        {
-            // Merge all of these programs into a single program
-            var finalProgram = Program.Combine(result.Select(r => r.program).ToArray());
-
-            // Get a collection of all string entries
-            var allStringKeys = result.SelectMany(r => r.stringTable.AsEnumerable());
-
-            // Get a collection of string IDs that we've seen more than
-            // once
-            var duplicateStringKeys = allStringKeys
-                                      .GroupBy(pair => pair.Key, pair => pair.Value)
-                                      .Where(group => group.Count() > 1);
-
-            foreach (var duplicateKey in duplicateStringKeys)
-            {
-                // Create a collection of strings describing where this
-                // line id has been seen
-                var occurrences = duplicateKey
-                    .SelectMany(info => $"{info.fileName}:{info.lineNumber}");
-
-                // Log a warning about it
-                Log.Error($"Duplicate line ID {duplicateKey.Key} (occurs in {string.Join(", ", occurrences)})");
-            }
-
-            // Stop here if there are any duplicate keys because we can't
-            // create a canonical, merged, unique string table
-            if (duplicateStringKeys.Count() > 1)
-            {
-                Environment.Exit(1);
-                return (null, null);
-            }
-
-            // Combine all of the keys into a single key
-            var finalStringTable = allStringKeys.ToDictionary(entry => entry.Key, entry => entry.Value);
-
-            return (finalProgram, finalStringTable);
         }
     }
 }
