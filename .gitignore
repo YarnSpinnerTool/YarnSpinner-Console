@@ -418,3 +418,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/macos,csharp,windows,visualstudiocode
+
+test/
