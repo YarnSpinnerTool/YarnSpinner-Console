@@ -90,7 +90,26 @@ namespace YarnSpinnerConsole
 
             upgradeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeFiles);
 
-            upgradeCommand.Handler = CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeFiles);
+            var dumpTreeCommand = new System.CommandLine.Command("print-tree", "Parses a Yarn script and produces a human-readable syntax tree.");
+            {
+                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "the file to print a parse tree from")
+                {
+                    Arity = ArgumentArity.OneOrMore,
+                };
+                dumpTreeCommand.AddArgument(inputArgument.ExistingOnly());
+
+                var outputOption = new Option<DirectoryInfo>("-o", "Output directory (default: current directory)");
+                outputOption.AddAlias("--output-directory");
+                outputOption.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
+                dumpTreeCommand.AddOption(outputOption.ExistingOnly());
+
+                var jsonOption = new Option<bool>("-j", "Output as JSON (default: false)");
+                jsonOption.AddAlias("--json");
+                jsonOption.Argument.SetDefaultValue(false);
+                dumpTreeCommand.AddOption(jsonOption);
+            }
+
+            dumpTreeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, bool>(DumpTree);
 
             // Create a root command with our two subcommands
             var rootCommand = new RootCommand
@@ -98,6 +117,7 @@ namespace YarnSpinnerConsole
                 runCommand,
                 compileCommand,
                 upgradeCommand,
+                dumpTreeCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
@@ -340,6 +360,192 @@ namespace YarnSpinnerConsole
             }
 
             Log.Info($"Wrote {stringTableOutputPath}");
+        }
+
+        private static void DumpTree(FileInfo[] input, DirectoryInfo outputDirectory, bool json)
+        {
+            foreach (var inputFile in input)
+            {
+                var source = File.ReadAllText(inputFile.FullName);
+                try
+                {
+                    Antlr4.Runtime.Tree.IParseTree tree = Utility.GetParseTree(source);
+
+                    string result;
+                    var outputFilePath = Path.Combine(outputDirectory.FullName, inputFile.Name);
+
+                    if (json)
+                    {
+                        result = FormatParseTreeAsJSON(tree);
+                        outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
+                    }
+                    else
+                    {
+                        result = FormatParseTreeAsText(tree, "| ");
+                        outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
+                    }
+
+                    File.WriteAllText(outputFilePath, result);
+
+                    Log.Info($"Wrote {outputFilePath}");
+                }
+                catch (ParseException e)
+                {
+                    Log.Error($"Failed to dump {inputFile.Name} because of a parse exception: {e}");
+                }
+            }
+        }
+
+        private class SerializedParseNode
+        {
+            public enum NodeType
+            {
+                Rule,
+                Token,
+            }
+
+            public NodeType Type { get; set; }
+            public int Line { get; set; }
+
+            public int Column { get; set; }
+
+            public string Name { get; set; }
+
+            public string Text { get; set; }
+
+            public List<SerializedParseNode> Children { get; set; } = null;
+        }
+
+        private static string FormatParseTreeAsJSON(Antlr4.Runtime.Tree.IParseTree tree)
+        {
+            var stack = new Stack<(SerializedParseNode Parent, Antlr4.Runtime.Tree.IParseTree Node)>();
+
+            stack.Push((null, tree));
+
+            SerializedParseNode root = null;
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+
+                var newNode = new SerializedParseNode();
+
+                if (current.Parent == null)
+                {
+                    root = newNode;
+                }
+                else
+                {
+                    current.Parent.Children.Add(newNode);
+                }
+
+                switch (current.Node.Payload)
+                {
+                    case Antlr4.Runtime.IToken token:
+                        {
+                            newNode.Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type);
+                            newNode.Type = SerializedParseNode.NodeType.Token;
+                            newNode.Text = token.Text;
+                            newNode.Line = token.Line;
+                            newNode.Column = token.Column;
+                            break;
+                        }
+                    case Antlr4.Runtime.ParserRuleContext ruleContext:
+                        {
+                            var start = ruleContext.Start;
+                            newNode.Name = YarnSpinnerParser.ruleNames[ruleContext.RuleIndex];
+                            newNode.Type = SerializedParseNode.NodeType.Rule;
+                            newNode.Line = start.Line;
+                            newNode.Column = start.Column;
+
+                            newNode.Children = new List<SerializedParseNode>();
+
+                            for (int i = ruleContext.ChildCount - 1; i >= 0; i--)
+                            {
+                                stack.Push((newNode, ruleContext.GetChild(i)));
+                            }
+
+                            break;
+                        }
+                    default:
+                        throw new InvalidOperationException($"Unexpected parse node type {current.Node.GetType()}");
+                }
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                IgnoreNullValues = true,
+                Converters =
+                {
+                    new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase),
+                },
+            };
+
+            return JsonSerializer.Serialize(root, options);
+        }
+
+        private static string FormatParseTreeAsText(Antlr4.Runtime.Tree.IParseTree tree, string indentPrefix)
+        {
+            var stack = new Stack<(int Indent, Antlr4.Runtime.Tree.IParseTree Node)>();
+
+            stack.Push((0, tree));
+
+            var sb = new StringBuilder();
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+
+                sb.Append(string.Concat(Enumerable.Repeat(indentPrefix, current.Indent)));
+
+                string item;
+
+                switch (current.Node.Payload)
+                {
+                    case Antlr4.Runtime.IToken token:
+                        {
+                            // Display this token's name and text. Tokens
+                            // have no children, so there's nothing else to
+                            // do here.
+                            var tokenName = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type);
+                            var tokenText = token.Text.Replace("\n", "\\n");
+                            item = $"{token.Line}:{token.Column} {tokenName} \"{tokenText}\"";
+                            break;
+                        }
+
+                    case Antlr4.Runtime.ParserRuleContext ruleContext:
+                        {
+                            // Display this rule's name (not its text,
+                            // because that's comprised of all of the child
+                            // tokens.)
+                            var ruleName = YarnSpinnerParser.ruleNames[ruleContext.RuleIndex];
+                            var start = ruleContext.Start;
+                            item = $"{start.Line}:{start.Column} {ruleName}";
+
+                            // Push all children into our stack; do this in
+                            // reverse order of child, so that we encounter
+                            // them in a reasonable order (i.e. child 0
+                            // will be the next item we see)
+                            for (int i = ruleContext.ChildCount - 1; i >= 0; i--)
+                            {
+                                var child = ruleContext.GetChild(i);
+                                stack.Push((current.Indent + 1, child));
+                            }
+
+                            break;
+                        }
+
+                    default:
+                        throw new InvalidOperationException($"Unexpected parse node type {current.Node.GetType()}");
+                }
+
+                sb.AppendLine(item);
+            }
+
+            var result = sb.ToString();
+            return result;
         }
     }
 }
