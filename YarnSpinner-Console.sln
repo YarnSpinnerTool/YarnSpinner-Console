@@ -5,10 +5,6 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ysc", "src\YarnSpinner.Console\ysc.csproj", "{68F4DF0A-D3B4-423B-AD0E-CAB6DF8BF99C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A9A2723E-47BA-4B59-B9B7-F71A66B7D6C5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YarnSpinner.Console.Test", "test\YarnSpinner.Console.Test\YarnSpinner.Console.Test.csproj", "{E099327D-98A9-48C7-9BB5-D40880CCCFF6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,8 +54,5 @@ Global
 		{E099327D-98A9-48C7-9BB5-D40880CCCFF6}.Release|x64.Build.0 = Release|Any CPU
 		{E099327D-98A9-48C7-9BB5-D40880CCCFF6}.Release|x86.ActiveCfg = Release|Any CPU
 		{E099327D-98A9-48C7-9BB5-D40880CCCFF6}.Release|x86.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{E099327D-98A9-48C7-9BB5-D40880CCCFF6} = {A9A2723E-47BA-4B59-B9B7-F71A66B7D6C5}
 	EndGlobalSection
 EndGlobal
