@@ -1,4 +1,4 @@
-namespace YarnSpinnerConsole
+﻿namespace YarnSpinnerConsole
 {
     using System;
     using System.Collections.Generic;
@@ -7,12 +7,25 @@ namespace YarnSpinnerConsole
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
     using Yarn;
     using Yarn.Compiler;
     using Yarn.Compiler.Upgrader;
 
     public class ConsoleApp
     {
+        public static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            IgnoreNullValues = true,
+            Converters =
+                {
+                    new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase),
+                },
+        };
+
         /// <summary>
         /// The entry point for the app.
         /// </summary>
@@ -111,6 +124,27 @@ namespace YarnSpinnerConsole
 
             dumpTreeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, bool>(DumpTree);
 
+            var dumpTokensCommand = new System.CommandLine.Command("print-tokens", "Parses a Yarn script and produces list of parsed tokens.");
+            {
+                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "the file to print a token list from")
+                {
+                    Arity = ArgumentArity.OneOrMore,
+                };
+                dumpTokensCommand.AddArgument(inputArgument.ExistingOnly());
+
+                var outputOption = new Option<DirectoryInfo>("-o", "Output directory (default: current directory)");
+                outputOption.AddAlias("--output-directory");
+                outputOption.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
+                dumpTokensCommand.AddOption(outputOption.ExistingOnly());
+
+                var jsonOption = new Option<bool>("-j", "Output as JSON (default: false)");
+                jsonOption.AddAlias("--json");
+                jsonOption.Argument.SetDefaultValue(false);
+                dumpTokensCommand.AddOption(jsonOption);
+            }
+
+            dumpTokensCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, bool>(DumpTokens);
+
             // Create a root command with our two subcommands
             var rootCommand = new RootCommand
             {
@@ -118,6 +152,7 @@ namespace YarnSpinnerConsole
                 compileCommand,
                 upgradeCommand,
                 dumpTreeCommand,
+                dumpTokensCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
@@ -372,7 +407,10 @@ namespace YarnSpinnerConsole
                     Antlr4.Runtime.Tree.IParseTree tree = Utility.GetParseTree(source);
 
                     string result;
-                    var outputFilePath = Path.Combine(outputDirectory.FullName, inputFile.Name);
+
+                    var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
+                    var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-ParseTree");
+
 
                     if (json)
                     {
@@ -398,13 +436,6 @@ namespace YarnSpinnerConsole
 
         private class SerializedParseNode
         {
-            public enum NodeType
-            {
-                Rule,
-                Token,
-            }
-
-            public NodeType Type { get; set; }
             public int Line { get; set; }
 
             public int Column { get; set; }
@@ -412,6 +443,8 @@ namespace YarnSpinnerConsole
             public string Name { get; set; }
 
             public string Text { get; set; }
+
+            public string Channel { get; set; }
 
             public List<SerializedParseNode> Children { get; set; } = null;
         }
@@ -444,17 +477,19 @@ namespace YarnSpinnerConsole
                     case Antlr4.Runtime.IToken token:
                         {
                             newNode.Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type);
-                            newNode.Type = SerializedParseNode.NodeType.Token;
                             newNode.Text = token.Text;
                             newNode.Line = token.Line;
+                            if (token.Channel != Antlr4.Runtime.Lexer.DefaultTokenChannel) {
+                                newNode.Channel = YarnSpinnerLexer.channelNames[token.Channel];
+                            }
                             newNode.Column = token.Column;
                             break;
                         }
+
                     case Antlr4.Runtime.ParserRuleContext ruleContext:
                         {
                             var start = ruleContext.Start;
                             newNode.Name = YarnSpinnerParser.ruleNames[ruleContext.RuleIndex];
-                            newNode.Type = SerializedParseNode.NodeType.Rule;
                             newNode.Line = start.Line;
                             newNode.Column = start.Column;
 
@@ -472,18 +507,7 @@ namespace YarnSpinnerConsole
                 }
             }
 
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                IgnoreNullValues = true,
-                Converters =
-                {
-                    new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase),
-                },
-            };
-
-            return JsonSerializer.Serialize(root, options);
+            return JsonSerializer.Serialize(root, JsonSerializationOptions);
         }
 
         private static string FormatParseTreeAsText(Antlr4.Runtime.Tree.IParseTree tree, string indentPrefix)
@@ -546,6 +570,51 @@ namespace YarnSpinnerConsole
 
             var result = sb.ToString();
             return result;
+        }
+
+        private static void DumpTokens(FileInfo[] input, DirectoryInfo outputDirectory, bool json)
+        {
+            foreach (var inputFile in input)
+            {
+                var source = File.ReadAllText(inputFile.FullName);
+                try
+                {
+                    IEnumerable<Antlr4.Runtime.IToken> tree = Utility.GetTokens(source);
+
+                    var nodes = tree.Select(token => new SerializedParseNode
+                    {
+                        Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type),
+                        Line = token.Line,
+                        Column = token.Column,
+                        Channel = token.Channel != YarnSpinnerLexer.DefaultTokenChannel ? YarnSpinnerLexer.channelNames[token.Channel] : null,
+                        Text = token.Text,
+                    }).ToList();
+
+                    string result;
+
+                    var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
+                    var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-Tokens");
+
+                    if (json)
+                    {
+                        result = JsonSerializer.Serialize(nodes, JsonSerializationOptions);
+                        outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
+                    }
+                    else
+                    {
+                        result = string.Join("\n", nodes.Select(n => $"{n.Line}:{n.Column} {n.Name} \"{n.Text.Replace("\n", "\\n")}\""));
+                        outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
+                    }
+
+                    File.WriteAllText(outputFilePath, result);
+                    Log.Info($"Wrote {outputFilePath}");
+
+                }
+                catch (ParseException e)
+                {
+                    Log.Error($"Failed to dump {inputFile.Name} because of a parse exception: {e}");
+                }
+            }
         }
     }
 }
