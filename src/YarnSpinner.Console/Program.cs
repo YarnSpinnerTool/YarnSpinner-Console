@@ -15,7 +15,7 @@
 
     public class ConsoleApp
     {
-        public static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
+        private static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
         {
             WriteIndented = true,
             PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
@@ -177,18 +177,17 @@
             };
 
             UpgradeResult upgradeResult;
-            try
+
+            upgradeResult = LanguageUpgrader.Upgrade(upgradeJob);
+
+            foreach (var diagnostic in upgradeResult.Diagnostics)
             {
-                upgradeResult = LanguageUpgrader.Upgrade(upgradeJob);
+                Log.Diagnostic(diagnostic);
             }
-            catch (ParseException e)
+
+            if (upgradeResult.Diagnostics.Any(d => d.Severity == Yarn.Compiler.Diagnostic.DiagnosticSeverity.Error))
             {
-                Log.Error($"Cannot upgrade files: parse error encountered. {e.Message}");
-                return;
-            }
-            catch (UpgradeException e)
-            {
-                Log.Error($"Cannot upgrade files: upgrade error encounterd. {e.Message}");
+                Log.Error($"Not modifying files because errors were encountered.");
                 return;
             }
 
@@ -402,51 +401,34 @@
             foreach (var inputFile in input)
             {
                 var source = File.ReadAllText(inputFile.FullName);
-                try
+
+                var (result, diagnostics) = Utility.ParseSource(source);
+
+                var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
+                var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-ParseTree");
+
+                string outputText;
+
+                if (json)
                 {
-                    Antlr4.Runtime.Tree.IParseTree tree = Utility.GetParseTree(source);
-
-                    string result;
-
-                    var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
-                    var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-ParseTree");
-
-
-                    if (json)
-                    {
-                        result = FormatParseTreeAsJSON(tree);
-                        outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
-                    }
-                    else
-                    {
-                        result = FormatParseTreeAsText(tree, "| ");
-                        outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
-                    }
-
-                    File.WriteAllText(outputFilePath, result);
-
-                    Log.Info($"Wrote {outputFilePath}");
+                    outputText = FormatParseTreeAsJSON(result.Tree);
+                    outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
                 }
-                catch (ParseException e)
+                else
                 {
-                    Log.Error($"Failed to dump {inputFile.Name} because of a parse exception: {e}");
+                    outputText = FormatParseTreeAsText(result.Tree, "| ");
+                    outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
                 }
+
+                foreach (var diagnostic in diagnostics)
+                {
+                    Log.Diagnostic(diagnostic);
+                }
+
+                File.WriteAllText(outputFilePath, outputText);
+
+                Log.Info($"Wrote {outputFilePath}");
             }
-        }
-
-        private class SerializedParseNode
-        {
-            public int Line { get; set; }
-
-            public int Column { get; set; }
-
-            public string Name { get; set; }
-
-            public string Text { get; set; }
-
-            public string Channel { get; set; }
-
-            public List<SerializedParseNode> Children { get; set; } = null;
         }
 
         private static string FormatParseTreeAsJSON(Antlr4.Runtime.Tree.IParseTree tree)
@@ -457,6 +439,9 @@
 
             SerializedParseNode root = null;
 
+            // Walk the IParseTree, and convert it to a tree of
+            // SerializedParseNodes, which we can in turn feed to the JSON
+            // serializer
             while (stack.Count > 0)
             {
                 var current = stack.Pop();
@@ -479,9 +464,11 @@
                             newNode.Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type);
                             newNode.Text = token.Text;
                             newNode.Line = token.Line;
-                            if (token.Channel != Antlr4.Runtime.Lexer.DefaultTokenChannel) {
+                            if (token.Channel != Antlr4.Runtime.Lexer.DefaultTokenChannel)
+                            {
                                 newNode.Channel = YarnSpinnerLexer.channelNames[token.Channel];
                             }
+
                             newNode.Column = token.Column;
                             break;
                         }
@@ -502,6 +489,7 @@
 
                             break;
                         }
+
                     default:
                         throw new InvalidOperationException($"Unexpected parse node type {current.Node.GetType()}");
                 }
@@ -577,44 +565,90 @@
             foreach (var inputFile in input)
             {
                 var source = File.ReadAllText(inputFile.FullName);
-                try
+
+                var (result, diagnostics) = Utility.ParseSource(source);
+
+                var nodes = result.Tokens.GetTokens().Select(token => new SerializedParseNode
                 {
-                    IEnumerable<Antlr4.Runtime.IToken> tree = Utility.GetTokens(source);
+                    Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type),
+                    Line = token.Line,
+                    Column = token.Column,
+                    Channel = token.Channel != YarnSpinnerLexer.DefaultTokenChannel ? YarnSpinnerLexer.channelNames[token.Channel] : null,
+                    Text = token.Text,
+                }).ToList();
 
-                    var nodes = tree.Select(token => new SerializedParseNode
-                    {
-                        Name = YarnSpinnerLexer.DefaultVocabulary.GetSymbolicName(token.Type),
-                        Line = token.Line,
-                        Column = token.Column,
-                        Channel = token.Channel != YarnSpinnerLexer.DefaultTokenChannel ? YarnSpinnerLexer.channelNames[token.Channel] : null,
-                        Text = token.Text,
-                    }).ToList();
+                string outputText;
 
-                    string result;
+                var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
+                var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-Tokens");
 
-                    var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
-                    var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-Tokens");
-
-                    if (json)
-                    {
-                        result = JsonSerializer.Serialize(nodes, JsonSerializationOptions);
-                        outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
-                    }
-                    else
-                    {
-                        result = string.Join("\n", nodes.Select(n => $"{n.Line}:{n.Column} {n.Name} \"{n.Text.Replace("\n", "\\n")}\""));
-                        outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
-                    }
-
-                    File.WriteAllText(outputFilePath, result);
-                    Log.Info($"Wrote {outputFilePath}");
-
-                }
-                catch (ParseException e)
+                if (json)
                 {
-                    Log.Error($"Failed to dump {inputFile.Name} because of a parse exception: {e}");
+                    outputText = JsonSerializer.Serialize(nodes, JsonSerializationOptions);
+                    outputFilePath = Path.ChangeExtension(outputFilePath, ".json");
                 }
+                else
+                {
+                    outputText = string.Join("\n", nodes.Select(n => $"{n.Line}:{n.Column} {n.Name} \"{n.Text.Replace("\n", "\\n")}\""));
+                    outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
+                }
+
+                foreach (var diagnostic in diagnostics)
+                {
+                    Log.Diagnostic(diagnostic);
+                }
+
+                File.WriteAllText(outputFilePath, outputText);
+                Log.Info($"Wrote {outputFilePath}");
             }
+        }
+
+        /// <summary>
+        /// A data-only class that stores a subset of the information
+        /// related to parse nodes, and designed to be serialized to JSON.
+        /// A parse node is either a rule (which has child nodes), or a
+        /// token.
+        /// </summary>
+        private class SerializedParseNode
+        {
+            /// <summary>
+            /// Gets or sets the line number that this parse node begins on.
+            /// </summary>
+            /// <remarks>
+            /// The first line number is 1.
+            /// </remarks>
+            public int Line { get; set; }
+
+            /// <summary>
+            /// Gets or sets the column number that this parse node begins on.
+            /// </summary>
+            public int Column { get; set; }
+
+            /// <summary>
+            /// Gets or sets the name of the rule or token that this node
+            /// represents.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Gets or sets the text of this token. If this node
+            /// represents a rule, this property will be <see
+            /// langword="null"/>.
+            /// </summary>
+            public string Text { get; set; }
+
+            /// <summary>
+            /// Gets or sets the name of the channel that this token
+            /// appeared on. If this node represents a rule, this property
+            /// wil be <see langword="null"/>.
+            /// </summary>
+            public string Channel { get; set; }
+
+            /// <summary>
+            /// Gets or sets the children of this node (that is, the rules
+            /// or tokens that make up this node.)
+            /// </summary>
+            public List<SerializedParseNode> Children { get; set; } = null;
         }
     }
 }
