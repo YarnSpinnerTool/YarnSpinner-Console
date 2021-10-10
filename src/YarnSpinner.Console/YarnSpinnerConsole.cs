@@ -13,7 +13,7 @@
     using Yarn.Compiler;
     using Yarn.Compiler.Upgrader;
 
-    public class ConsoleApp
+    public class YarnSpinnerConsole
     {
         private static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
         {
@@ -327,7 +327,7 @@
         private static CompilationResult CompileProgram(FileInfo[] inputs)
         {
             // The list of all files and their associated compiled results
-            var results = new List<(FileInfo file, Program program, IDictionary<string, StringInfo> stringTable)>();
+            var results = new List<(FileInfo file, Yarn.Program program, IDictionary<string, StringInfo> stringTable)>();
 
             var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
 
