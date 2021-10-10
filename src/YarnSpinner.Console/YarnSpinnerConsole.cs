@@ -13,6 +13,9 @@
     using Yarn.Compiler;
     using Yarn.Compiler.Upgrader;
 
+    /// <summary>
+    /// Provides the entry point to the ysc command.
+    /// </summary>
     public class YarnSpinnerConsole
     {
         private static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
