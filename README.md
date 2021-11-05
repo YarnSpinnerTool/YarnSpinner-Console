@@ -41,23 +41,23 @@ Defaults to `1`, or upgrading a yarn v1 file to a yarn v2 file.
 ## Printing the Syntax Tree
 
 ```bash
-ysc print-tree [--output-directory <output>] [--json] <input1.yarn> <input2.yarn> ...
+$ ysc print-tree [--output-directory <output>] [--json] <input1.yarn> <input2.yarn> ...
 ```
 
 Prints a human readable form of the dialogue syntax tree of the input Yarn files.
 This is useful when debugging the language itself or for some more unusual shenanigans.
-Defaults to returning the syntax tree as a text file, by specifiying the `--json` flag can instead return them as a JSON file.
+Defaults to returning the syntax tree as a text file, by specifiying the `--json` flag will instead return them as a JSON file.
 
 ## Printing the Parser Tokens
 
 ```bash
-ysc print-tokens [--output-directory <output>] [--json] <input1.yarn> <input2.yarn> ...
+$ ysc print-tokens [--output-directory <output>] [--json] <input1.yarn> <input2.yarn> ...
 ```
 
 Prints a list of all parser tokens from the included Yarn files.
 Tokens are shown with their line number and starting index.
 This is useful when debugging the language itself or for some more unusual shenanigans.
-Defaults to returning the syntax tree as a text file, by specifiying the `--json` flag can instead return them as a JSON file.
+Defaults to returning the syntax tree as a text file, by specifiying the `--json` flag will instead return them as a JSON file.
 
 ## License
 
