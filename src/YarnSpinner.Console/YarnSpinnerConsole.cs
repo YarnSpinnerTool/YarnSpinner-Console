@@ -3,13 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.CommandLine;
-    using System.CommandLine.Invocation;
     using System.IO;
     using System.Linq;
     using System.Text;
     using System.Text.Json;
     using System.Text.Json.Serialization;
-    using Yarn;
     using Yarn.Compiler;
     using Yarn.Compiler.Upgrader;
 
