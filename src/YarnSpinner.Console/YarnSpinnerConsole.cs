@@ -618,6 +618,7 @@
             }
         }
 
+        // adds file tags onto the input files and writes them back out
         private static void TagFiles(FileInfo[] inputs, DirectoryInfo outputDirectory)
         {
             if (inputs == null)
@@ -628,10 +629,10 @@
             var tags = new List<string>();
             foreach (var inputFile in inputs)
             {
-                var compilationJob = Yarn.Compiler.CompilationJob.CreateFromFiles(inputFile.FullName);
-                compilationJob.CompilationType = Yarn.Compiler.CompilationJob.Type.StringsOnly;
+                var compilationJob = CompilationJob.CreateFromFiles(inputFile.FullName);
+                compilationJob.CompilationType = CompilationJob.Type.StringsOnly;
 
-                var results = Yarn.Compiler.Compiler.Compile(compilationJob);
+                var results = Compiler.Compile(compilationJob);
 
                 bool containsErrors = results.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error);
                 if (containsErrors)
@@ -644,21 +645,40 @@
                 tags.AddRange(existingTags);
             }
 
+            var writeOut = new Dictionary<string, string>();
             foreach (var inputFile in inputs)
             {
-                var contents = File.ReadAllText(inputFile.FullName);
-                var taggedFile = Utility.AddTagsToLines(contents, tags);
-
-                var path = inputFile.FullName;
-
-                if (outputDirectory != null)
+                try
                 {
-                    path = outputDirectory.FullName + inputFile.Name;
-                }
+                    var contents = File.ReadAllText(inputFile.FullName);
+                    var taggedFile = Utility.AddTagsToLines(contents, tags);
 
-                // writing it back out
-                // should probably delay this and do it all at once once tagged instead of one at a time
-                File.WriteAllText(path, taggedFile, System.Text.Encoding.UTF8);
+                    var path = inputFile.FullName;
+
+                    if (outputDirectory != null)
+                    {
+                        path = outputDirectory.FullName + inputFile.Name;
+                    }
+                    writeOut[path] = taggedFile;
+                }
+                catch
+                {
+                    Log.Error($"Unable to read {inputFile.FullName}");
+                }
+            }
+
+            // not sure if this is better than doing it during the tagging
+            // /me shrugs
+            foreach (var pair in writeOut)
+            {
+                try
+                {
+                    File.WriteAllText(pair.Key, pair.Value, Encoding.UTF8);
+                }
+                catch
+                {
+                    Log.Error($"Unable to write tagged file {pair.Key}");
+                }
             }
         }
 
