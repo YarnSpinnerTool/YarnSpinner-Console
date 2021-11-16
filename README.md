@@ -59,6 +59,16 @@ Tokens are shown with their line number and starting index.
 This is useful when debugging the language itself or for some more unusual shenanigans.
 Defaults to returning the syntax tree as a text file, by specifiying the `--json` flag will instead return them as a JSON file.
 
+## Tagging lines for localisation
+
+```bash
+$ ysc tag [--output-directory <output>] <input1.yarn> <input2.yarn> ...
+```
+
+Tags the input Yarn files with line ID hashtag for localisation.
+Uses the line tagging code from YarnSpinner core, this means by default lines will be tagged following the rules of tagging lines from the core.
+If `--output-directory` is not set will default to overriding the files in place.
+
 ## License
 
 `ysc` is available under the [MIT License](LICENSE.md).

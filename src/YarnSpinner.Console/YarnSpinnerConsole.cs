@@ -146,7 +146,20 @@
 
             dumpTokensCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, bool>(DumpTokens);
 
-            // Create a root command with our two subcommands
+            var tagCommand = new Command("tag", "Tags a Yarn script with localisation line IDs");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The files to tag with line IDs");
+                inputsArgument.Arity = ArgumentArity.OneOrMore;
+                tagCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var outputOption = new Option<DirectoryInfo>("-o", "Output directory to write the newly tagged files (default: override the input files)");
+                outputOption.AddAlias("--output-directory");
+                tagCommand.AddOption(outputOption.ExistingOnly());
+            }
+
+            tagCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo>(TagFiles);
+
+            // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
                 runCommand,
@@ -154,6 +167,7 @@
                 upgradeCommand,
                 dumpTreeCommand,
                 dumpTokensCommand,
+                tagCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
@@ -601,6 +615,50 @@
 
                 File.WriteAllText(outputFilePath, outputText);
                 Log.Info($"Wrote {outputFilePath}");
+            }
+        }
+
+        private static void TagFiles(FileInfo[] inputs, DirectoryInfo outputDirectory)
+        {
+            if (inputs == null)
+            {
+                Log.Fatal("No yarn files provided as inputs");
+            }
+
+            var tags = new List<string>();
+            foreach (var inputFile in inputs)
+            {
+                var compilationJob = Yarn.Compiler.CompilationJob.CreateFromFiles(inputFile.FullName);
+                compilationJob.CompilationType = Yarn.Compiler.CompilationJob.Type.StringsOnly;
+
+                var results = Yarn.Compiler.Compiler.Compile(compilationJob);
+
+                bool containsErrors = results.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error);
+                if (containsErrors)
+                {
+                    Log.Error($"Can't check for existing line tags in {inputFile.FullName} because it contains errors. Existing tags will be overwritten");
+                    continue;
+                }
+
+                var existingTags = results.StringTable.Where(i => i.Value.isImplicitTag == false).Select(i => i.Key);
+                tags.AddRange(existingTags);
+            }
+
+            foreach (var inputFile in inputs)
+            {
+                var contents = File.ReadAllText(inputFile.FullName);
+                var taggedFile = Utility.AddTagsToLines(contents, tags);
+
+                var path = inputFile.FullName;
+
+                if (outputDirectory != null)
+                {
+                    path = outputDirectory.FullName + inputFile.Name;
+                }
+
+                // writing it back out
+                // should probably delay this and do it all at once once tagged instead of one at a time
+                File.WriteAllText(path, taggedFile, System.Text.Encoding.UTF8);
             }
         }
 
