@@ -377,6 +377,8 @@
 
             var programOutputPath = Path.Combine(outputDirectory.FullName, outputName);
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
+            var metadataName = Path.GetFileNameWithoutExtension(stringTableOutputPath);
+            var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, $"{metadataName}-metadata.csv");
 
             using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
@@ -409,6 +411,39 @@
             }
 
             Log.Info($"Wrote {stringTableOutputPath}");
+
+            using (var writer = new StreamWriter(stringMetadatOutputPath))
+            {
+                // Use the invariant culture when writing the CSV
+                var configuration = new CsvHelper.Configuration.Configuration(System.Globalization.CultureInfo.InvariantCulture);
+
+                // not really using csvhelper correctly here but its fine for now until it all works
+                var csv = new CsvHelper.CsvWriter(writer, configuration);
+                csv.WriteField("id");
+                csv.WriteField("node");
+                csv.WriteField("lineNumber");
+                csv.WriteField("tags");
+                csv.NextRecord();
+                foreach (var pair in compiledResults.StringTable)
+                {
+                    // if there are less than two items we have only the lineID itself in the metadata
+                    if (pair.Value.metadata.Length < 2)
+                    {
+                        continue;
+                    }
+
+                    csv.WriteField(pair.Key);
+                    csv.WriteField(pair.Value.nodeName);
+                    csv.WriteField(pair.Value.lineNumber);
+                    foreach (var record in pair.Value.metadata)
+                    {
+                        csv.WriteField(record);
+                    }
+                    csv.NextRecord();
+                }
+
+                Log.Info($"Wrote {stringMetadatOutputPath}");
+            }
         }
 
         private static void DumpTree(FileInfo[] input, DirectoryInfo outputDirectory, bool json)
