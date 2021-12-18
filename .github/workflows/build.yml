@@ -52,20 +52,20 @@ jobs:
       run: dotnet test --no-build --configuration Release --verbosity normal
     
     - name: Package for Windows
-      run: dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
+      run: dotnet publish -r win-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
     
     - uses: actions/upload-artifact@v2
       name: Upload Windows build
       with:
         name: ysc-win-${{ github.sha }}
-        path: src/YarnSpinner.Console/bin/Release/netcoreapp3.1/win-x64/publish/ysc.exe
+        path: YarnSpinner-Console/src/YarnSpinner.Console/bin/Release/netcoreapp3.1/win-x64/publish/ysc.exe
     
     - name: Package for macOS
-      run: dotnet publish -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
+      run: dotnet publish -r osx-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
       
     - uses: actions/upload-artifact@v2
       name: Upload macOS build
       with:
         name: ysc-osx-${{ github.sha }}
-        path: src/YarnSpinner.Console/bin/Release/netcoreapp3.1/osx-x64/publish/ysc
+        path: YarnSpinner-Console/src/YarnSpinner.Console/bin/Release/netcoreapp3.1/osx-x64/publish/ysc
 
