@@ -58,7 +58,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       name: Upload Windows build
       with:
-        name: ysc-win-${{ github.refname }}-${{ github.sha }}
+        name: ysc-win-${{ steps.gitversion.outputs.fullSemVer }}-${{ steps.gitversion.outputs.shortSha }}
         path: src/YarnSpinner.Console/bin/Release/netcoreapp3.1/win-x64/publish/ysc.exe
     
     - name: Package for macOS
@@ -67,6 +67,6 @@ jobs:
     - uses: actions/upload-artifact@v2
       name: Upload macOS build
       with:
-        name: ysc-win-${{ github.refname }}-${{ github.sha }}
+        name: ysc-osx-${{ steps.gitversion.outputs.fullSemVer }}-${{ steps.gitversion.outputs.shortSha }}
         path: src/YarnSpinner.Console/bin/Release/netcoreapp3.1/osx-x64/publish/ysc
 
