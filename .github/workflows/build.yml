@@ -103,7 +103,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
+        release_name: ${{ needs.build.outputs.builtVersion }}
         draft: true
         prerelease: true
         body: |
