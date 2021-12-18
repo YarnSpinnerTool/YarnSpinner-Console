@@ -126,7 +126,7 @@ jobs:
     
     - name: Package macOS build
       run: |
-        gzip ysc-osx/ysc-osx.exe
+        gzip ysc-osx/ysc-osx.tar
 
     - name: Upload macOS Build
       uses: actions/upload-release-asset@v1
