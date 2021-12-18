@@ -2,6 +2,30 @@
 
 **`ysc`** is the command-line tool for working with [Yarn Spinner](https://github.com/YarnSpinnerTool/YarnSpinner) programs.
 
+## Installing `ysc`
+
+You can install `ysc` by downloading the [most recent release](https://github.com/YarnSpinnerTool/YarnSpinner-Console/releases/latest), or by building it locally.
+
+<details>
+<summary>Building it locally</summary>
+<p>
+
+* Download and install the [.NET SDK](https://dotnet.microsoft.com/en-us/download).
+* In your terminal, build and run the project with the following command:
+
+    ```bash
+    dotnet-run -- [your commands]
+    ```
+
+    For example, to compile a Yarn script, run the following command:
+
+    ```bash
+    dotnet-run -- compile path/to/MyScript.yarn
+    ```
+
+</p>
+</details>
+
 ## Compiling Scripts
 
 ```bash
