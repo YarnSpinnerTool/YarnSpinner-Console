@@ -6,3 +6,4 @@ Yarn Spinner is made possible by your generous patronage. Please consider suppor
 
 <a href="https://patreon.com/secretlab"><img width="200" src="https://user-images.githubusercontent.com/901768/71883373-6f40ff80-318a-11ea-9d3a-01f1f58cb39e.png"></a>
 
+**macOS Users:** macOS use is still under development; this binary is not notarized. 
