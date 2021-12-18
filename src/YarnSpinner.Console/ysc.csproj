@@ -6,7 +6,6 @@
     <RootNamespace>YarnSpinnerConsole</RootNamespace>
     <UseAppHost>true</UseAppHost>
     <PublishSelfContained>true</PublishSelfContained>
-    <PublishTrimmed>true</PublishTrimmed>         
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
