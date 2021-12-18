@@ -112,7 +112,7 @@ jobs:
 
     - name: Package Windows build
       run: |
-        zip --junk-paths ysc-win.zip ysc-win/ysc-win.exe
+        zip --junk-paths ysc-win.zip ysc-win/ysc.exe
 
     - name: Upload Windows Build
       uses: actions/upload-release-asset@v1
