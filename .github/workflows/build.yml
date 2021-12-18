@@ -120,7 +120,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./ysc-win/ysc-win.zip
+        asset_path: ./ysc-win.zip
         asset_name: ysc-win-${{ needs.build.outputs.builtVersion }}.zip
         asset_content_type: application/zip
     
