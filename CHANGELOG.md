@@ -12,7 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
-## [2.0.2] 2021-02-08
+## [2.1.0] 2022-02-17
+
+### Changed
+
+- Updated to use Yarn Spinner 2.1.0. See release notes: https://github.com/YarnSpinnerTool/YarnSpinner/releases/tag/v2.1.0
+
+## [2.0.2] 2022-02-08
 
 ### Changed
 
