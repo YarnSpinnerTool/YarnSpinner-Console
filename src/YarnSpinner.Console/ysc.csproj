@@ -11,8 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20253.1" />
-    <PackageReference Include="YarnSpinner" Version="2.0.2" />
-    <PackageReference Include="YarnSpinner.Compiler" Version="2.0.2" />
+    <PackageReference Include="YarnSpinner" Version="2.1.0" />
+    <PackageReference Include="YarnSpinner.Compiler" Version="2.1.0" />
     <PackageReference Include="CsvHelper" Version="12.2.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
