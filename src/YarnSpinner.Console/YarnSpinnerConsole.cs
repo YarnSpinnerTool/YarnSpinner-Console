@@ -375,6 +375,17 @@
         {
             var compiledResults = CompileProgram(inputs);
 
+            foreach (var diagnostic in compiledResults.Diagnostics)
+            {
+                Log.Diagnostic(diagnostic);
+            }
+
+            if (compiledResults.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error))
+            {
+                Log.Error($"Not compiling files because errors were encountered.");
+                return;
+            }
+
             var programOutputPath = Path.Combine(outputDirectory.FullName, outputName);
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var metadataName = Path.GetFileNameWithoutExtension(stringTableOutputPath);
