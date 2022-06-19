@@ -29,12 +29,14 @@ You can install `ysc` by downloading the [most recent release](https://github.co
 ## Compiling Scripts
 
 ```bash
-$ ysc compile [--merge] [--output-directory <output>] <input1.yarn> <input2.yarn> ...
+$ ysc compile [--merge] [--output-directory <output>] [--use-input-relative-paths] <input1.yarn> <input2.yarn> ...
 ```
 
 `ysc` will compile all of the `.yarn` files you provide, and generate two files for each: a `.yarnc` file containing the compiled file, and a `.csv` containing the extracted string table.
 
 If you specify the `--merge` option, a single `output.yarnc` and `output.csv` file will be created.
+
+If you specify the `--use-input-relative-paths` option, output files will use relative paths for yarn files rather than absolute paths.
 
 ## Running Scripts
 
@@ -98,4 +100,3 @@ If `--output-directory` is not set will default to overriding the files in place
 ## Contributing
 
 See the [Contributing guide](CONTRIBUTING.md) for developer documentation.
-
