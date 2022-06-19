@@ -40,6 +40,10 @@
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 compileCommand.AddArgument(inputsArgument.ExistingOnly());
 
+                var inputRelativePathsOption = new Option("-ir", "Whether to use relative paths for the input files. (default: false)");
+                inputRelativePathsOption.AddAlias("--use-input-relative-paths");
+                compileCommand.AddOption(inputRelativePathsOption);
+
                 var outputOption = new Option<DirectoryInfo>("-o", "Output directory (default: current directory)");
                 outputOption.AddAlias("--output-directory");
                 outputOption.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
@@ -61,7 +65,7 @@
                 // "Output.yarnc", it would be "Output.csv"
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string>(CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], bool, DirectoryInfo, string, string>(CompileFiles);
 
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {
@@ -230,7 +234,7 @@
         {
             // this will be a new interactive command for running yarn
             // stories will compile and then run them
-            var results = CompileProgram(inputs);
+            var results = CompileProgram(FileInfosToPaths(inputs, false));
 
             string TextForLine(string lineID)
             {
@@ -339,12 +343,12 @@
 
         // compiles a given yarn story designed to be called by runners or
         // the generic compile command does no writing
-        private static CompilationResult CompileProgram(FileInfo[] inputs)
+        private static CompilationResult CompileProgram(IEnumerable<string> paths)
         {
             // The list of all files and their associated compiled results
             var results = new List<(FileInfo file, Yarn.Program program, IDictionary<string, StringInfo> stringTable)>();
 
-            var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
+            var compilationJob = CompilationJob.CreateFromFiles(paths);
 
             CompilationResult compilationResult;
 
@@ -371,9 +375,9 @@
             return compilationResult;
         }
 
-        private static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName)
+        private static void CompileFiles(FileInfo[] inputs, bool useInputRelativePaths, DirectoryInfo outputDirectory, string outputName, string outputStringTableName)
         {
-            var compiledResults = CompileProgram(inputs);
+            var compiledResults = CompileProgram(FileInfosToPaths(inputs, useInputRelativePaths));
 
             foreach (var diagnostic in compiledResults.Diagnostics)
             {
@@ -726,6 +730,17 @@
                     Log.Error($"Unable to write tagged file {pair.Key}");
                 }
             }
+        }
+
+        private static IEnumerable<string> FileInfosToPaths(FileInfo[] files, bool shouldBeRelativePaths)
+        {
+            var paths = files.Select(fileInfo => fileInfo.FullName);
+            if (shouldBeRelativePaths)
+            {
+                paths = paths.Select(fullPath => Path.GetRelativePath(Environment.CurrentDirectory, fullPath));
+            }
+
+            return paths;
         }
 
         /// <summary>
