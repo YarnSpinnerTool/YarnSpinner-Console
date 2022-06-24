@@ -10,6 +10,7 @@
     using System.Text.Json.Serialization;
     using Yarn.Compiler;
     using Yarn.Compiler.Upgrader;
+    using ClosedXML.Excel;
 
     /// <summary>
     /// Provides the entry point to the ysc command.
@@ -159,6 +160,20 @@
 
             tagCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo>(TagFiles);
 
+            var extractCommand = new Command("extract", "Extracts strings from the provided files");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to extract strings from");
+                inputsArgument.Arity = ArgumentArity.OneOrMore;
+                extractCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var exportFormat = new Option<string>("--format", "The export file format for the extracted strings, defaults to csv").FromAmong("csv", "xlsx");
+                exportFormat.AddAlias("-f");
+                exportFormat.Argument.SetDefaultValue("csv");
+                extractCommand.AddOption(exportFormat);
+            }
+
+            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string>(ExtractStrings);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -168,6 +183,7 @@
                 dumpTreeCommand,
                 dumpTokensCommand,
                 tagCommand,
+                extractCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
@@ -726,6 +742,97 @@
                     Log.Error($"Unable to write tagged file {pair.Key}");
                 }
             }
+        }
+
+        private static void ExtractStrings(FileInfo[] inputs, string format)
+        {
+            var compiledResults = CompileProgram(inputs);
+
+            foreach (var diagnostic in compiledResults.Diagnostics)
+            {
+                Log.Diagnostic(diagnostic);
+            }
+
+            if (compiledResults.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error))
+            {
+                Log.Error($"Aborting string extraction due to errors");
+                return;
+            }
+
+            Log.Info($"Exporting strings as a {format}");
+
+            List<(string id, string text, string character)> lines = new List<(string id, string text, string character)>();
+
+            foreach (var line in compiledResults.StringTable)
+            {
+                var id = line.Key;
+                
+                var index = line.Value.text.IndexOf(':');
+                var text = line.Value.text;
+                string character = string.Empty;
+                if (index > 0)
+                {
+                    character = line.Value.text.Substring(0, index);
+                    text = line.Value.text.Substring(index + 1).TrimStart();
+                }
+                lines.Add((id: id, text: text, character: character));
+            }
+
+            Log.Info($"we encountered {lines.Count()} lines");
+
+            switch (format)
+            {
+                case "csv":
+                {
+                    using (var writer = new StreamWriter("./test.csv"))
+                    {
+                        // Use the invariant culture when writing the CSV
+                        var configuration = new CsvHelper.Configuration.Configuration(System.Globalization.CultureInfo.InvariantCulture);
+
+                        var csv = new CsvHelper.CsvWriter(writer, configuration);
+                        csv.WriteField("character");
+                        csv.WriteField("text");
+                        csv.WriteField("id");
+                        csv.NextRecord();
+
+                        foreach (var line in lines.OrderBy(x => x.character))
+                        {
+                            var character = line.character == string.Empty ? "NO CHAR" : line.character;
+                            csv.WriteField(character);
+                            csv.WriteField(line.text);
+                            csv.WriteField(line.id);
+
+                            csv.NextRecord();
+                        }
+
+                        Log.Info($"Wrote CSV out");
+                    }
+
+                    break;
+                }
+                case "xlsx":
+                {
+                    var wb = new XLWorkbook();
+                    var sheet = wb.AddWorksheet("Amazing Dialogue!");
+                    int i = 1;
+                    foreach (var line in lines.OrderBy(x => x.character))
+                    {
+                        var character = line.character == string.Empty ? "NO CHAR" : line.character;
+                        sheet.Cell($"A{i}").Value = character;
+                        sheet.Cell($"B{i}").Value = line.text;
+                        sheet.Cell($"C{i}").Value = line.id;
+                        i += 1;
+                    }
+
+                    sheet.RangeUsed().AddConditionalFormat().WhenIsTrue("=$A1=\"A\"").Fill.SetBackgroundColor(XLColor.Red);
+
+                    wb.SaveAs("./Test.xlsx");
+                    Log.Info($"Wrote xlslx out");
+                    break;
+                }
+            }
+
+            Log.Info("file written");
         }
 
         /// <summary>
