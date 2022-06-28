@@ -761,24 +761,86 @@
 
             Log.Info($"Exporting strings as a {format}");
 
-            List<(string id, string text, string character)> lines = new List<(string id, string text, string character)>();
-
-            foreach (var line in compiledResults.StringTable)
+            // used to hold each run of lines that are to be associated together
+            List<List<(string id, string text, string character)>> lineBlocks = new List<List<(string id, string text, string character)>>();
+            (string id, string text, string character) MakeLineData(string lineID)
             {
-                var id = line.Key;
-                
-                var index = line.Value.text.IndexOf(':');
-                var text = line.Value.text;
+                var line = compiledResults.StringTable[lineID];
+
                 string character = string.Empty;
+                var index = line.text.IndexOf(':');
+                var text = line.text;
                 if (index > 0)
                 {
-                    character = line.Value.text.Substring(0, index);
-                    text = line.Value.text.Substring(index + 1).TrimStart();
+                    character = line.text.Substring(0, index);
+                    text = line.text.Substring(index + 1).TrimStart();
                 }
-                lines.Add((id: id, text: text, character: character));
+
+                return (id: lineID, text: text, character: character);
             }
 
-            Log.Info($"we encountered {lines.Count()} lines");
+            foreach (var node in compiledResults.Program.Nodes)
+            {
+                var blocks = Yarn.Analysis.InstructionCollectionExtensions.GetBasicBlocks(node.Value);
+                var visited = new HashSet<string>();
+                foreach (var block in blocks)
+                {
+                    if (block.PlayerVisibleContent.Count() == 0)
+                    {
+                        // skipping this block because it has no user content within
+                        continue;
+                    }
+
+                    if (visited.Contains(block.Name))
+                    {
+                        // we have already visited this one so we can go on without it
+                        continue;
+                    }
+                    Log.Info($"We have block: {block.Name}");
+                    visited.Add(block.Name);
+
+                    var zorp = new List<(string id, string text, string character)>();
+                    foreach (var content in block.PlayerVisibleContent)
+                    {
+                        // I really really dislike using objects in this manner
+                        // it just feels oh so very strange to me
+                        if(content is Yarn.Analysis.BasicBlock.LineElement)
+                        {
+                            var line = content as Yarn.Analysis.BasicBlock.LineElement;
+                            Log.Info($"\tIt contains {line.LineID}");
+
+                            zorp.Add(MakeLineData(line.LineID));
+                        }
+                        else if (content is Yarn.Analysis.BasicBlock.OptionsElement)
+                        {
+                            var options = content as Yarn.Analysis.BasicBlock.OptionsElement;
+                            foreach (var option in options.Options)
+                            {
+                                // need to handle the case where the option has a jump, ignoring for now
+
+                                Log.Info($"\t-> {option.LineID}");
+                                zorp.Add(MakeLineData(option.LineID));
+                            }
+                        }
+                        else if (content is Yarn.Analysis.BasicBlock.CommandElement)
+                        {
+                            // skipping commands as they aren't lines
+                            continue;
+                        }
+                        else
+                        {
+                            Log.Error("\tSomehow encountered a non-user facing element...");
+                        }
+                    }
+                    lineBlocks.Add(zorp);
+                }
+            }
+
+            int lineCount = lineBlocks.Sum(l => l.Count());
+            if (lineCount != compiledResults.StringTable.Count())
+            {
+                Log.Error($"String table has {compiledResults.StringTable.Count()} lines, we encountered {lineCount}!");
+            }
 
             switch (format)
             {
@@ -795,13 +857,21 @@
                         csv.WriteField("id");
                         csv.NextRecord();
 
-                        foreach (var line in lines)
+                        foreach (var lines in lineBlocks)
                         {
-                            var character = line.character == string.Empty ? "NO CHAR" : line.character;
-                            csv.WriteField(character);
-                            csv.WriteField(line.text);
-                            csv.WriteField(line.id);
+                            foreach (var line in lines)
+                            {
+                                var character = line.character == string.Empty ? "NO CHAR" : line.character;
+                                csv.WriteField(character);
+                                csv.WriteField(line.text);
+                                csv.WriteField(line.id);
 
+                                csv.NextRecord();
+                            }
+                            // hack to draw a line after each block
+                            csv.WriteField("---");
+                            csv.WriteField("---");
+                            csv.WriteField("---");
                             csv.NextRecord();
                         }
 
@@ -815,12 +885,20 @@
                     var wb = new XLWorkbook();
                     var sheet = wb.AddWorksheet("Amazing Dialogue!");
                     int i = 1;
-                    foreach (var line in lines)
+                    foreach (var lines in lineBlocks)
                     {
-                        var character = line.character == string.Empty ? "NO CHAR" : line.character;
-                        sheet.Cell($"A{i}").Value = character;
-                        sheet.Cell($"B{i}").Value = line.text;
-                        sheet.Cell($"C{i}").Value = line.id;
+                        foreach (var line in lines)
+                        {
+                            var character = line.character == string.Empty ? "NO CHAR" : line.character;
+                            sheet.Cell($"A{i}").Value = character;
+                            sheet.Cell($"B{i}").Value = line.text;
+                            sheet.Cell($"C{i}").Value = line.id;
+                            i += 1;
+                        }
+                        // total hack for now to draw a line after each block
+                        sheet.Cell($"A{i}").Value = "---";
+                        sheet.Cell($"B{i}").Value = "---";
+                        sheet.Cell($"C{i}").Value = "---";
                         i += 1;
                     }
 
