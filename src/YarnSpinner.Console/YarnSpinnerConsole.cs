@@ -795,7 +795,7 @@
                         csv.WriteField("id");
                         csv.NextRecord();
 
-                        foreach (var line in lines.OrderBy(x => x.character))
+                        foreach (var line in lines)
                         {
                             var character = line.character == string.Empty ? "NO CHAR" : line.character;
                             csv.WriteField(character);
@@ -815,7 +815,7 @@
                     var wb = new XLWorkbook();
                     var sheet = wb.AddWorksheet("Amazing Dialogue!");
                     int i = 1;
-                    foreach (var line in lines.OrderBy(x => x.character))
+                    foreach (var line in lines)
                     {
                         var character = line.character == string.Empty ? "NO CHAR" : line.character;
                         sheet.Cell($"A{i}").Value = character;
