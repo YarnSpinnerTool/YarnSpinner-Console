@@ -761,6 +761,14 @@
 
             Log.Info($"Exporting strings as a {format}");
 
+            // contains every character we have encountered so far
+            // this is needed later on for highlighting them
+            // also I guess it means we can export info about characters
+            HashSet<string> characters = new HashSet<string>();
+
+            // do we have unnmaed characters?
+            bool hasUnnamedCharacters = false;
+
             // used to hold each run of lines that are to be associated together
             List<List<(string id, string text, string character)>> lineBlocks = new List<List<(string id, string text, string character)>>();
             (string id, string text, string character) MakeLineData(string lineID)
@@ -774,6 +782,11 @@
                 {
                     character = line.text.Substring(0, index);
                     text = line.text.Substring(index + 1).TrimStart();
+                    characters.Add(character);
+                }
+                else
+                {
+                    hasUnnamedCharacters = true;
                 }
 
                 return (id: lineID, text: text, character: character);
@@ -893,6 +906,12 @@
                 Log.Error($"String table has {compiledResults.StringTable.Count()} lines, we encountered {lineCount}!");
             }
 
+            Log.Info($"We have {characters.Count()} characters in this story");
+            foreach (var character in characters)
+            {
+                Log.Info(character);
+            }
+
             switch (format)
             {
                 case "csv":
@@ -953,7 +972,51 @@
                         i += 1;
                     }
 
-                    sheet.RangeUsed().AddConditionalFormat().WhenIsTrue("=$A1=\"A\"").Fill.SetBackgroundColor(XLColor.Red);
+                    // adding the unnamed character into the list of characters so it will also get a colour
+                    if (hasUnnamedCharacters)
+                    {
+                        characters.Add("NO CHAR");
+                    }
+
+                    // colouring every character
+                    // we do this by moving around the hue wheel and a 20-40% saturation
+                    // this creates a mostly low collision colour for labelling characters
+                    int colourIncrementor = 0;
+                    Random random = new Random();
+                    double range = (0.4 - 0.2) + 0.2; // putting this out here so I can tweak it as needed: (max - min) + min
+                    foreach (var character in characters)
+                    {
+                        sheet.RangeUsed().AddConditionalFormat().WhenIsTrue($"=$A1=\"{character}\"").Fill.SetBackgroundColor(ColorFromHSV(360.0 / characters.Count() * colourIncrementor, random.NextDouble() * range, 1));
+                        colourIncrementor += 1;
+                    }
+
+                    XLColor ColorFromHSV(double hue, double saturation, double value)
+                    {
+                        int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+                        double f = (hue / 60) - Math.Floor(hue / 60);
+
+                        value = value * 255;
+                        int v = Convert.ToInt32(value);
+                        int p = Convert.ToInt32(value * (1 - saturation));
+                        int q = Convert.ToInt32(value * (1 - f * saturation));
+                        int t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
+
+                        switch(hi)
+                        {
+                            case 0:
+                                return XLColor.FromArgb(255, v, t, p);
+                            case 1:
+                                return XLColor.FromArgb(255, q, v, p);
+                            case 2:
+                                return XLColor.FromArgb(255, p, v, t);
+                            case 3:
+                                return XLColor.FromArgb(255, p, q, v);
+                            case 4:
+                                return XLColor.FromArgb(255, t, p, v);
+                            default:
+                                return XLColor.FromArgb(255, v, p, q);
+                        }
+                    }
 
                     wb.SaveAs("./Test.xlsx");
                     Log.Info($"Wrote xlslx out");
