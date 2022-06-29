@@ -815,13 +815,13 @@
                 }
                 visited.Add(block.Name);
 
-                var zorp = new List<(string id, string text, string character)>();
+                var runOfLines = new List<(string id, string text, string character)>();
 
                 // if we are given an opening line ID we need to add that in at the top
                 // this handles the case where we want options to open the set associated lines
                 if (!string.IsNullOrEmpty(openingLineID))
                 {
-                    zorp.Add(MakeLineData(openingLineID));
+                    runOfLines.Add(MakeLineData(openingLineID));
                 }
 
                 foreach (var content in block.PlayerVisibleContent)
@@ -833,7 +833,7 @@
                         // lines just get added to the current collection of content
                         var line = content as Yarn.Analysis.BasicBlock.LineElement;
 
-                        zorp.Add(MakeLineData(line.LineID));
+                        runOfLines.Add(MakeLineData(line.LineID));
                     }
                     else if (content is Yarn.Analysis.BasicBlock.OptionsElement)
                     {
@@ -841,10 +841,10 @@
                         // an option will always be put into a block by themselves and any child content they have
                         // so this means we close off the current run of content and add it to the overall container
                         // and then make a new one for each option in the option set
-                        if (zorp.Count() > 0)
+                        if (runOfLines.Count() > 0)
                         {
-                            lineBlocks.Add(zorp);
-                            zorp = new List<(string id, string text, string character)>();
+                            lineBlocks.Add(runOfLines);
+                            runOfLines = new List<(string id, string text, string character)>();
                         }
 
                         var options = content as Yarn.Analysis.BasicBlock.OptionsElement;
@@ -862,9 +862,9 @@
                             {
                                 // there is no jump for this option
                                 // we just add it to the collection and continue
-                                zorp.Add(MakeLineData(option.LineID));
-                                lineBlocks.Add(zorp);
-                                zorp = new List<(string id, string text, string character)>();
+                                runOfLines.Add(MakeLineData(option.LineID));
+                                lineBlocks.Add(runOfLines);
+                                runOfLines = new List<(string id, string text, string character)>();
                             }
                         }
 
@@ -886,9 +886,9 @@
                     }
                 }
 
-                if (zorp.Count() > 0)
+                if (runOfLines.Count() > 0)
                 {
-                    lineBlocks.Add(zorp);
+                    lineBlocks.Add(runOfLines);
                 }
             }
 

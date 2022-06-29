@@ -91,6 +91,18 @@ Tags the input Yarn files with line ID hashtag for localisation.
 Uses the line tagging code from YarnSpinner core, this means by default lines will be tagged following the rules of tagging lines from the core.
 If `--output-directory` is not set will default to overriding the files in place.
 
+## Extracting lines for recording
+
+```bash
+$ ysc extract <input1.yarn> <input2.yarn> ... [--format csv|xlsx]
+```
+
+Creates a tables of all lines in the included Yarn files in a format intended for easier recording.
+Runs of lines are collected and seperated in the table.
+Currently the table shows the character, the line, and the line ID in that order.
+Defaults to extracting the strings as a csv but this can be changed using the `--format` option.
+If the excel option is set (`--format xlsx`) then conditional highlighting will be used to colour each characters lines.
+
 ## License
 
 `ysc` is available under the [MIT License](LICENSE.md).
