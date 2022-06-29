@@ -785,53 +785,104 @@
                 var visited = new HashSet<string>();
                 foreach (var block in blocks)
                 {
-                    if (block.PlayerVisibleContent.Count() == 0)
-                    {
-                        // skipping this block because it has no user content within
-                        continue;
-                    }
+                    RunBlock(block, blocks, visited);
+                }
+            }
 
-                    if (visited.Contains(block.Name))
-                    {
-                        // we have already visited this one so we can go on without it
-                        continue;
-                    }
-                    Log.Info($"We have block: {block.Name}");
-                    visited.Add(block.Name);
+            void RunBlock(Yarn.Analysis.BasicBlock block, IEnumerable<Yarn.Analysis.BasicBlock> blocks, HashSet<string> visited, string openingLineID = null)
+            {
+                if (block.PlayerVisibleContent.Count() == 0)
+                {
+                    // skipping this block because it has no user content within
+                    return;
+                }
 
-                    var zorp = new List<(string id, string text, string character)>();
-                    foreach (var content in block.PlayerVisibleContent)
+                if (visited.Contains(block.Name))
+                {
+                    // we have already visited this one so we can go on without it
+                    return;
+                }
+                Log.Info($"We have block: {block.Name}");
+                visited.Add(block.Name);
+
+                var zorp = new List<(string id, string text, string character)>();
+
+                // if we are given an opening line ID we need to add that in at the top
+                // this handles the case where we want options to open the set associated lines
+                if (!string.IsNullOrEmpty(openingLineID))
+                {
+                    zorp.Add(MakeLineData(openingLineID));
+                }
+
+                foreach (var content in block.PlayerVisibleContent)
+                {
+                    // I really really dislike using objects in this manner
+                    // it just feels oh so very strange to me
+                    if (content is Yarn.Analysis.BasicBlock.LineElement)
                     {
-                        // I really really dislike using objects in this manner
-                        // it just feels oh so very strange to me
-                        if(content is Yarn.Analysis.BasicBlock.LineElement)
+                        // lines just get added to the current collection of content
+                        var line = content as Yarn.Analysis.BasicBlock.LineElement;
+                        Log.Info($"\tIt contains {line.LineID}");
+
+                        zorp.Add(MakeLineData(line.LineID));
+                    }
+                    else if (content is Yarn.Analysis.BasicBlock.OptionsElement)
+                    {
+                        // options are special cased because of how they work
+                        // an option will always be put into a block by themselves and any child content they have
+                        // so this means we close off the current run of content and add it to the overall container
+                        // and then make a new one for each option in the option set
+                        if (zorp.Count() > 0)
                         {
-                            var line = content as Yarn.Analysis.BasicBlock.LineElement;
-                            Log.Info($"\tIt contains {line.LineID}");
-
-                            zorp.Add(MakeLineData(line.LineID));
+                            Log.Info($"Hit an option block, adding the existing {zorp.Count()} content elements before continuing");
+                            lineBlocks.Add(zorp);
+                            zorp = new List<(string id, string text, string character)>();
                         }
-                        else if (content is Yarn.Analysis.BasicBlock.OptionsElement)
-                        {
-                            var options = content as Yarn.Analysis.BasicBlock.OptionsElement;
-                            foreach (var option in options.Options)
-                            {
-                                // need to handle the case where the option has a jump, ignoring for now
 
-                                Log.Info($"\t-> {option.LineID}");
+                        var options = content as Yarn.Analysis.BasicBlock.OptionsElement;
+                        var jumpOptions = new Dictionary<string, Yarn.Analysis.BasicBlock>();
+                        foreach (var option in options.Options)
+                        {
+                            Log.Info($"\t-> {option.LineID}: {option.Destination}");
+
+                            var destination = blocks.First(block => block.LabelName == option.Destination);
+                            if (destination != null && destination.PlayerVisibleContent.Count() > 0)
+                            {
+                                Log.Info("\t\tand the destination has stuff inside");
+                                // there is a valid jump we need to deal with
+                                // we store this and will handle it later
+                                jumpOptions[option.LineID] = destination;
+                            }
+                            else
+                            {
+                                // there is no jump for this option
+                                // we just add it to the collection and continue
                                 zorp.Add(MakeLineData(option.LineID));
+                                lineBlocks.Add(zorp);
+                                zorp = new List<(string id, string text, string character)>();
                             }
                         }
-                        else if (content is Yarn.Analysis.BasicBlock.CommandElement)
+
+                        // now any options without a child block have been handled we need to handle those with children
+                        // in that case we want to run through each of those as if they are a new block but with the option at the top
+                        foreach (var pair in jumpOptions)
                         {
-                            // skipping commands as they aren't lines
-                            continue;
-                        }
-                        else
-                        {
-                            Log.Error("\tSomehow encountered a non-user facing element...");
+                            RunBlock(pair.Value, blocks, visited, pair.Key);
                         }
                     }
+                    else if (content is Yarn.Analysis.BasicBlock.CommandElement)
+                    {
+                        // skipping commands as they aren't lines
+                        continue;
+                    }
+                    else
+                    {
+                        Log.Error("\tSomehow encountered a non-user facing element...");
+                    }
+                }
+
+                if (zorp.Count() > 0)
+                {
                     lineBlocks.Add(zorp);
                 }
             }
