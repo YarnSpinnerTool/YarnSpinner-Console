@@ -759,8 +759,6 @@
                 return;
             }
 
-            Log.Info($"Exporting strings as a {format}");
-
             // contains every character we have encountered so far
             // this is needed later on for highlighting them
             // also I guess it means we can export info about characters
@@ -815,7 +813,6 @@
                     // we have already visited this one so we can go on without it
                     return;
                 }
-                Log.Info($"We have block: {block.Name}");
                 visited.Add(block.Name);
 
                 var zorp = new List<(string id, string text, string character)>();
@@ -835,7 +832,6 @@
                     {
                         // lines just get added to the current collection of content
                         var line = content as Yarn.Analysis.BasicBlock.LineElement;
-                        Log.Info($"\tIt contains {line.LineID}");
 
                         zorp.Add(MakeLineData(line.LineID));
                     }
@@ -847,7 +843,6 @@
                         // and then make a new one for each option in the option set
                         if (zorp.Count() > 0)
                         {
-                            Log.Info($"Hit an option block, adding the existing {zorp.Count()} content elements before continuing");
                             lineBlocks.Add(zorp);
                             zorp = new List<(string id, string text, string character)>();
                         }
@@ -856,12 +851,9 @@
                         var jumpOptions = new Dictionary<string, Yarn.Analysis.BasicBlock>();
                         foreach (var option in options.Options)
                         {
-                            Log.Info($"\t-> {option.LineID}: {option.Destination}");
-
                             var destination = blocks.First(block => block.LabelName == option.Destination);
                             if (destination != null && destination.PlayerVisibleContent.Count() > 0)
                             {
-                                Log.Info("\t\tand the destination has stuff inside");
                                 // there is a valid jump we need to deal with
                                 // we store this and will handle it later
                                 jumpOptions[option.LineID] = destination;
@@ -890,7 +882,7 @@
                     }
                     else
                     {
-                        Log.Error("\tSomehow encountered a non-user facing element...");
+                        Log.Error("Somehow encountered a non-user facing element...");
                     }
                 }
 
@@ -906,17 +898,11 @@
                 Log.Error($"String table has {compiledResults.StringTable.Count()} lines, we encountered {lineCount}!");
             }
 
-            Log.Info($"We have {characters.Count()} characters in this story");
-            foreach (var character in characters)
-            {
-                Log.Info(character);
-            }
-
             switch (format)
             {
                 case "csv":
                 {
-                    using (var writer = new StreamWriter("./test.csv"))
+                    using (var writer = new StreamWriter("./lines.csv"))
                     {
                         // Use the invariant culture when writing the CSV
                         var configuration = new CsvHelper.Configuration.Configuration(System.Globalization.CultureInfo.InvariantCulture);
@@ -944,8 +930,6 @@
                             csv.WriteField("---");
                             csv.NextRecord();
                         }
-
-                        Log.Info($"Wrote CSV out");
                     }
 
                     break;
@@ -1018,8 +1002,7 @@
                         }
                     }
 
-                    wb.SaveAs("./Test.xlsx");
-                    Log.Info($"Wrote xlslx out");
+                    wb.SaveAs("./lines.xlsx");
                     break;
                 }
             }
