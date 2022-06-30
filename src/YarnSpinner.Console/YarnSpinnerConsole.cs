@@ -1,4 +1,4 @@
-namespace YarnSpinnerConsole
+﻿namespace YarnSpinnerConsole
 {
     using System;
     using System.Collections.Generic;
@@ -947,6 +947,34 @@ namespace YarnSpinnerConsole
                     var wb = new XLWorkbook();
                     var sheet = wb.AddWorksheet("Amazing Dialogue!");
                     int i = 1;
+
+                    // Create the header
+                    sheet.Cell($"A{i}").Value = "Character";
+                    sheet.Cell($"B{i}").Value = "Line";
+                    sheet.Cell($"C{i}").Value = "Line ID";
+                    sheet.Row(i).Style.Font.Bold = true;
+                    sheet.Row(i).Style.Fill.BackgroundColor = XLColor.DarkGray;
+                    sheet.Row(i).Style.Font.FontColor = XLColor.White;
+                    sheet.SheetView.FreezeRows(1);
+
+                    // The first column (containing the character name) has a
+                    // border on the right hand side
+                    sheet.Column("A").Style.Border.SetRightBorder(XLBorderStyleValues.Thick);
+                    sheet.Column("A").Style.Border.SetRightBorderColor(XLColor.Black);
+
+                    // The second column (containing the line) is indent
+                    // slightly so that it's not hard up against the border
+                    sheet.Column("B").Style.Alignment.Indent = 5;
+
+                    // The columns always contain text (don't try to infer it to
+                    // be any other type, like numbers or currency)
+                    foreach (var col in sheet.Columns("A:C")) {
+                        col.DataType = XLDataType.Text;
+                        col.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+                    }
+
+                    i += 1;
+
                     foreach (var lines in lineBlocks)
                     {
                         foreach (var line in lines)
@@ -957,11 +985,15 @@ namespace YarnSpinnerConsole
                             sheet.Cell($"C{i}").Value = line.id;
                             i += 1;
                         }
-                        // total hack for now to draw a line after each block
-                        sheet.Cell($"A{i}").Value = "---";
-                        sheet.Cell($"B{i}").Value = "---";
-                        sheet.Cell($"C{i}").Value = "---";
-                        i += 1;
+
+                        // Add the dividing line between this block and the next
+                        sheet.Row(i-1).Style.Border.SetBottomBorder(XLBorderStyleValues.Thick);
+                        sheet.Row(i-1).Style.Border.SetBottomBorderColor(XLColor.Black);
+
+                        // The next row is twice as high, to create some visual
+                        // space between the block we're ending and the next
+                        // one.
+                        sheet.Row(i).Height = sheet.RowHeight * 2;
                     }
 
                     // adding the unnamed character into the list of characters so it will also get a colour
@@ -969,6 +1001,11 @@ namespace YarnSpinnerConsole
                     {
                         characters.Add("NO CHAR");
                     }
+
+                    // Wrap the column containing lines, and set it to a
+                    // sensible initial width
+                    sheet.Column("B").Style.Alignment.WrapText = true;
+                    sheet.Column("B").Width = 80;
 
                     // colouring every character
                     // we do this by moving around the hue wheel and a 20-40% saturation
