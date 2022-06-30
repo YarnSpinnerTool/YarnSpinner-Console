@@ -1,4 +1,4 @@
-﻿namespace YarnSpinnerConsole
+namespace YarnSpinnerConsole
 {
     using System;
     using System.Collections.Generic;
@@ -170,9 +170,13 @@
                 exportFormat.AddAlias("-f");
                 exportFormat.Argument.SetDefaultValue("csv");
                 extractCommand.AddOption(exportFormat);
+
+                var defaultCharacterName = new Option<string>("--default-name", "The default character name to use. Defaults to none.");
+                defaultCharacterName.Argument.SetDefaultValue(null);
+                extractCommand.AddOption(defaultCharacterName);
             }
 
-            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string>(ExtractStrings);
+            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string>(ExtractStrings);
 
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
@@ -744,7 +748,7 @@
             }
         }
 
-        private static void ExtractStrings(FileInfo[] inputs, string format)
+        private static void ExtractStrings(FileInfo[] inputs, string format, string defaultName = null)
         {
             var compiledResults = CompileProgram(inputs);
 
@@ -780,6 +784,10 @@
                 {
                     character = line.text.Substring(0, index);
                     text = line.text.Substring(index + 1).TrimStart();
+                    characters.Add(character);
+                }
+                else if (defaultName != null) {
+                    character = defaultName;
                     characters.Add(character);
                 }
                 else
