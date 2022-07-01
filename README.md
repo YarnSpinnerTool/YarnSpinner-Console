@@ -94,7 +94,7 @@ If `--output-directory` is not set will default to overriding the files in place
 ## Extracting lines for recording
 
 ```bash
-$ ysc extract <input1.yarn> <input2.yarn> ... [--format csv|xlsx] [--columns <column1> <column2> ...] [--default-name <name>]
+$ ysc extract <input1.yarn> <input2.yarn> ... [--format csv|xlsx] [--columns <column1> <column2> ...] [--default-name <name>] [--output <file>]
 ```
 
 Creates a tables of all lines in the included Yarn files in a format intended for easier recording.
@@ -112,6 +112,10 @@ If `--columns` is not set it will default to using the columns `character`, `tex
 
 If the `default-name` option is set you can define a default name for lines of dialogue that do not have a character set.
 Defaults to none if not used.
+
+If the `output` option is set you can define a file location for the extracted dialogue.
+When exporting an `xlsx` the file type of set when using `--output` *must* be `xlsx` or else the export will fail.
+Defaults to `lines` in the current directory if not set.
 
 ## License
 

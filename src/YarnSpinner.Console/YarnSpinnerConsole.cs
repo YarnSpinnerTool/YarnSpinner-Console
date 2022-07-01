@@ -178,9 +178,13 @@
                 var defaultCharacterName = new Option<string>("--default-name", "The default character name to use. Defaults to none.");
                 defaultCharacterName.Argument.SetDefaultValue(null);
                 extractCommand.AddOption(defaultCharacterName);
+
+                var output = new Option<FileInfo>("-o", "File location for saving the extracted strings. Defaults to a file named lines in the current directory");
+                output.AddAlias("--output");
+                extractCommand.AddOption(output);
             }
 
-            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string[], string>(ExtractStrings);
+            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string[], FileInfo, string>(ExtractStrings);
 
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
@@ -752,7 +756,7 @@
             }
         }
 
-        private static void ExtractStrings(FileInfo[] inputs, string format, string[] columns, string defaultName = null)
+        private static void ExtractStrings(FileInfo[] inputs, string format, string[] columns, FileInfo output, string defaultName = null)
         {
             var compiledResults = CompileProgram(inputs);
 
@@ -787,6 +791,16 @@
                     Log.Error("Export requires at least an \"id\" and \"text\" column, aborting.");
                     return;
                 }
+            }
+
+            string location;
+            if (output == null)
+            {
+                location = $"./lines.{format}";
+            }
+            else
+            {
+                location = output.FullName;
             }
 
             // contains every character we have encountered so far
@@ -937,7 +951,7 @@
             {
                 case "csv":
                 {
-                    using (var writer = new StreamWriter("./lines.csv"))
+                    using (var writer = new StreamWriter(location))
                     {
                         // Use the invariant culture when writing the CSV
                         var configuration = new CsvHelper.Configuration.Configuration(System.Globalization.CultureInfo.InvariantCulture);
@@ -1117,7 +1131,7 @@
                         int q = Convert.ToInt32(value * (1 - f * saturation));
                         int t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
 
-                        switch(hi)
+                        switch (hi)
                         {
                             case 0:
                                 return XLColor.FromArgb(255, v, t, p);
@@ -1134,7 +1148,7 @@
                         }
                     }
 
-                    wb.SaveAs("./lines.xlsx");
+                    wb.SaveAs(location);
                     break;
                 }
             }
