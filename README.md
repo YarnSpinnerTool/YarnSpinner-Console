@@ -94,7 +94,7 @@ If `--output-directory` is not set will default to overriding the files in place
 ## Extracting lines for recording
 
 ```bash
-$ ysc extract <input1.yarn> <input2.yarn> ... [--format csv|xlsx]
+$ ysc extract <input1.yarn> <input2.yarn> ... [--format csv|xlsx] [--columns column1 column2 ...]
 ```
 
 Creates a tables of all lines in the included Yarn files in a format intended for easier recording.
@@ -102,6 +102,12 @@ Runs of lines are collected and seperated in the table.
 Currently the table shows the character, the line, and the line ID in that order.
 Defaults to extracting the strings as a csv but this can be changed using the `--format` option.
 If the excel option is set (`--format xlsx`) then conditional highlighting will be used to colour each characters lines.
+
+If the `columns` option is set you can define a list of columns you want the output to have.
+There are three pre-defined columns (`text`, `id`, `character`) which can be used and the exporter will fill in the appropriate line details in that place.
+Any custom columns are left blank.
+If setting the columns you must include at least `text` and `id` somewhere in your for the extraction to continue.
+If `--columns` is not set it will default to using the columns `character`, `text`, `id` in that order.
 
 ## License
 
