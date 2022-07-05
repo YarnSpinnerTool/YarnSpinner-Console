@@ -171,12 +171,20 @@
                 exportFormat.Argument.SetDefaultValue("csv");
                 extractCommand.AddOption(exportFormat);
 
+                var columns = new Option<string[]>("--columns", "The desired columns in the exported table of strings.");
+                columns.Argument.SetDefaultValue(new string[] { "character", "text", "id", });
+                extractCommand.AddOption(columns);
+
                 var defaultCharacterName = new Option<string>("--default-name", "The default character name to use. Defaults to none.");
                 defaultCharacterName.Argument.SetDefaultValue(null);
                 extractCommand.AddOption(defaultCharacterName);
+
+                var output = new Option<FileInfo>("-o", "File location for saving the extracted strings. Defaults to a file named lines in the current directory");
+                output.AddAlias("--output");
+                extractCommand.AddOption(output);
             }
 
-            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string>(ExtractStrings);
+            extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string[], FileInfo, string>(ExtractStrings);
 
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
@@ -748,7 +756,7 @@
             }
         }
 
-        private static void ExtractStrings(FileInfo[] inputs, string format, string defaultName = null)
+        private static void ExtractStrings(FileInfo[] inputs, string format, string[] columns, FileInfo output, string defaultName = null)
         {
             var compiledResults = CompileProgram(inputs);
 
@@ -761,6 +769,38 @@
             {
                 Log.Error($"Aborting string extraction due to errors");
                 return;
+            }
+
+            if (columns.Length > 0)
+            {
+                bool hasID = false;
+                bool hasText = false;
+                foreach (var column in columns)
+                {
+                    if (column.ToLower().Equals("id"))
+                    {
+                        hasID = true;
+                    }
+                    else if (column.ToLower().Equals("text"))
+                    {
+                        hasText = true;
+                    }
+                }
+                if (!(hasID && hasText))
+                {
+                    Log.Error("Export requires at least an \"id\" and \"text\" column, aborting.");
+                    return;
+                }
+            }
+
+            string location;
+            if (output == null)
+            {
+                location = $"./lines.{format}";
+            }
+            else
+            {
+                location = output.FullName;
             }
 
             // contains every character we have encountered so far
@@ -786,7 +826,8 @@
                     text = line.text.Substring(index + 1).TrimStart();
                     characters.Add(character);
                 }
-                else if (defaultName != null) {
+                else if (defaultName != null)
+                {
                     character = defaultName;
                     characters.Add(character);
                 }
@@ -910,15 +951,18 @@
             {
                 case "csv":
                 {
-                    using (var writer = new StreamWriter("./lines.csv"))
+                    using (var writer = new StreamWriter(location))
                     {
                         // Use the invariant culture when writing the CSV
                         var configuration = new CsvHelper.Configuration.Configuration(System.Globalization.CultureInfo.InvariantCulture);
 
                         var csv = new CsvHelper.CsvWriter(writer, configuration);
-                        csv.WriteField("character");
-                        csv.WriteField("text");
-                        csv.WriteField("id");
+                        
+                        // writing out the headers of the table
+                        foreach (var column in columns)
+                        {
+                            csv.WriteField(column);
+                        }
                         csv.NextRecord();
 
                         foreach (var lines in lineBlocks)
@@ -926,16 +970,41 @@
                             foreach (var line in lines)
                             {
                                 var character = line.character == string.Empty ? "NO CHAR" : line.character;
-                                csv.WriteField(character);
-                                csv.WriteField(line.text);
-                                csv.WriteField(line.id);
+
+                                foreach (var column in columns)
+                                {
+                                    switch (column.ToLower())
+                                    {
+                                        case "id":
+                                        {
+                                            csv.WriteField(line.id);
+                                            break;
+                                        }
+                                        case "text":
+                                        {
+                                            csv.WriteField(line.text);
+                                            break;
+                                        }
+                                        case "character":
+                                        {
+                                            csv.WriteField(character);
+                                            break;
+                                        }
+                                        default:
+                                        {
+                                            csv.WriteField(string.Empty);
+                                            break;
+                                        }
+                                    }
+                                }
 
                                 csv.NextRecord();
-                            }
+                            }   
                             // hack to draw a line after each block
-                            csv.WriteField("---");
-                            csv.WriteField("---");
-                            csv.WriteField("---");
+                            for (int i = 0; i < columns.Length; i++)
+                            {
+                                csv.WriteField(string.Empty);
+                            }
                             csv.NextRecord();
                         }
                     }
@@ -949,26 +1018,28 @@
                     int i = 1;
 
                     // Create the header
-                    sheet.Cell($"A{i}").Value = "Character";
-                    sheet.Cell($"B{i}").Value = "Line";
-                    sheet.Cell($"C{i}").Value = "Line ID";
-                    sheet.Row(i).Style.Font.Bold = true;
+                    for (int j = 0; j < columns.Length; j++)
+                    {
+                        sheet.Cell(i, j + 1).Value = columns[j];
+                    }
+
+                    sheet.Row(i).Style.Font.Bold = true; 
                     sheet.Row(i).Style.Fill.BackgroundColor = XLColor.DarkGray;
                     sheet.Row(i).Style.Font.FontColor = XLColor.White;
                     sheet.SheetView.FreezeRows(1);
 
-                    // The first column (containing the character name) has a
-                    // border on the right hand side
+                    // The first column has a border on the right hand side
                     sheet.Column("A").Style.Border.SetRightBorder(XLBorderStyleValues.Thick);
                     sheet.Column("A").Style.Border.SetRightBorderColor(XLColor.Black);
 
-                    // The second column (containing the line) is indent
-                    // slightly so that it's not hard up against the border
+                    // The second column is indent slightly so that it's 
+                    // not hard up against the border
                     sheet.Column("B").Style.Alignment.Indent = 5;
 
                     // The columns always contain text (don't try to infer it to
                     // be any other type, like numbers or currency)
-                    foreach (var col in sheet.Columns("A:C")) {
+                    foreach (var col in sheet.Columns())
+                    {
                         col.DataType = XLDataType.Text;
                         col.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
                     }
@@ -980,15 +1051,38 @@
                         foreach (var line in lines)
                         {
                             var character = line.character == string.Empty ? "NO CHAR" : line.character;
-                            sheet.Cell($"A{i}").Value = character;
-                            sheet.Cell($"B{i}").Value = line.text;
-                            sheet.Cell($"C{i}").Value = line.id;
+
+                            int j = 1;
+
+                            foreach (var column in columns)
+                            {
+                                string lineValue;
+
+                                switch (column.ToLower())
+                                {
+                                    case "id":
+                                        lineValue = line.id;
+                                        break;
+                                    case "text":
+                                        lineValue = line.text;
+                                        break;
+                                    case "character":
+                                        lineValue = character;
+                                        break;
+                                    default:
+                                        lineValue = string.Empty;
+                                        break;
+                                }
+                                sheet.Cell(i, j).Value = lineValue;
+                                j += 1;
+                            }
+
                             i += 1;
                         }
 
                         // Add the dividing line between this block and the next
-                        sheet.Row(i-1).Style.Border.SetBottomBorder(XLBorderStyleValues.Thick);
-                        sheet.Row(i-1).Style.Border.SetBottomBorderColor(XLColor.Black);
+                        sheet.Row(i - 1).Style.Border.SetBottomBorder(XLBorderStyleValues.Thick);
+                        sheet.Row(i - 1).Style.Border.SetBottomBorderColor(XLColor.Black);
 
                         // The next row is twice as high, to create some visual
                         // space between the block we're ending and the next
@@ -1004,8 +1098,15 @@
 
                     // Wrap the column containing lines, and set it to a
                     // sensible initial width
-                    sheet.Column("B").Style.Alignment.WrapText = true;
-                    sheet.Column("B").Width = 80;
+                    for (int j = 0; j < columns.Length; j++)
+                    {
+                        if (columns[j].ToLower().Equals("text"))
+                        {
+                            sheet.Column(j + 1).Style.Alignment.WrapText = true;
+                            sheet.Column(j + 1).Width = 80;
+                            break;
+                        }
+                    }
 
                     // colouring every character
                     // we do this by moving around the hue wheel and a 20-40% saturation
@@ -1030,7 +1131,7 @@
                         int q = Convert.ToInt32(value * (1 - f * saturation));
                         int t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
 
-                        switch(hi)
+                        switch (hi)
                         {
                             case 0:
                                 return XLColor.FromArgb(255, v, t, p);
@@ -1047,7 +1148,7 @@
                         }
                     }
 
-                    wb.SaveAs("./lines.xlsx");
+                    wb.SaveAs(location);
                     break;
                 }
             }
