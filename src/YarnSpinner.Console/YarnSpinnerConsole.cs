@@ -437,8 +437,9 @@
                 csv.NextRecord();
                 foreach (var pair in compiledResults.StringTable)
                 {
-                    // if there are less than two items we have only the lineID itself in the metadata
-                    if (pair.Value.metadata.Length < 2)
+                    // filter out line: metadata
+                    var metadata = pair.Value.metadata.Where(metadata => !metadata.StartsWith("line:")).ToList();
+                    if (metadata.Count == 0)
                     {
                         continue;
                     }
@@ -446,10 +447,11 @@
                     csv.WriteField(pair.Key);
                     csv.WriteField(pair.Value.nodeName);
                     csv.WriteField(pair.Value.lineNumber);
-                    foreach (var record in pair.Value.metadata)
+                    foreach (var record in metadata)
                     {
                         csv.WriteField(record);
                     }
+
                     csv.NextRecord();
                 }
 
