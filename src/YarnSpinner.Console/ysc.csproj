@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp6.0</TargetFramework>
     <RootNamespace>YarnSpinnerConsole</RootNamespace>
     <UseAppHost>true</UseAppHost>
     <PublishSelfContained>true</PublishSelfContained>
@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.95.4" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20253.1" />
     <PackageReference Include="YarnSpinner" Version="2.2.0" />
     <PackageReference Include="YarnSpinner.Compiler" Version="2.2.0" />
