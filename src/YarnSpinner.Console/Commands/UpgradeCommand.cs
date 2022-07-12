@@ -52,6 +52,15 @@ namespace YarnSpinnerConsole
                     }
                 }
             }
+
+            Log.Info("Upgrade complete, compiling to determine if any errors have occurred as result of upgrade");
+
+            // finally we do a compile of the files *just* in-case
+            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
+            foreach (var diagnostic in compiledResults.Diagnostics)
+            {
+                Log.Diagnostic(diagnostic);
+            }
         }
 
     }
