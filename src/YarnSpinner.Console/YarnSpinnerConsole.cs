@@ -44,18 +44,21 @@
                 outputOption.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
                 compileCommand.AddOption(outputOption.ExistingOnly());
 
-                var outputFilenameOption = new Option<string>("-n", "Output filename (default: Output.yarnc)");
+                var outputFilenameOption = new Option<string>("-n", "Output name to use for the files (default: Output)");
                 outputFilenameOption.AddAlias("--output-name");
-                outputFilenameOption.Argument.SetDefaultValue("Output.yarnc");
+                outputFilenameOption.Argument.SetDefaultValue("Output");
                 compileCommand.AddOption(outputFilenameOption);
 
-                var outputStringTableOption = new Option<string>("-t", "Output string table filename (default: Output.csv");
+                var outputStringTableOption = new Option<string>("-t", "Output string table filename (default: {name}-Lines.csv");
                 outputStringTableOption.AddAlias("--output-string-table-name");
-                outputStringTableOption.Argument.SetDefaultValue("Output.csv");
                 compileCommand.AddOption(outputStringTableOption);
+
+                var outputMetadataTableOption = new Option<string>("-m", "Output metadata table filename (default: {name}-Metadata.csv");
+                outputMetadataTableOption.AddAlias("--output-metadata-table-name");
+                compileCommand.AddOption(outputMetadataTableOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string>(CompileCommand.CompileFiles);
 
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {

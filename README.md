@@ -29,14 +29,16 @@ You can install `ysc` by downloading the [most recent release](https://github.co
 ## Compiling Scripts
 
 ```bash
-$ ysc compile [--output-directory <output>] [--output-name <name>] [--output-string-table-name <tablename>] <input1.yarn> <input2.yarn> ...
+$ ysc compile [--output-directory <output>] [--output-name <name>] [--output-string-table-name <tablename>] [--output-metadata-table-name <metadataname>] <input1.yarn> <input2.yarn> ...
 ```
 
-`ysc` will compile all of the `.yarn` files you provide, and generate two files for each: a `.yarnc` file containing the compiled file, and a `.csv` containing the extracted string table.
+`ysc` will compile all of the `.yarn` files you provide, and generates three files: `input.yarnc` compiled program, `input-Lines.csv` strings table, and `input-Metadata.csv` table of line metadata.
 
 By default the name of the yarn file will be used to name the compiled output.
-If more than one Yarn file is included then you can set a name using the `--output-name` and `--output-string-table-name` flag for the compiled output and string table respectively.
-If a name isn't set the default name of `Output` will be used for both.
+If more than one Yarn file is included then you can set a name using the `--output-name` option, this name will then be used as the base name for the files.
+If a name isn't set and there are more than one input, the default name of `Output` will be used as the base name.
+
+If further customisation `--output-string-table-name` and `--output-metadata-table-name` allow overriding the filename of the string and metadata tables respectively.
 
 ## Running Scripts
 

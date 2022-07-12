@@ -6,7 +6,7 @@ namespace YarnSpinnerConsole
 
     public static class CompileCommand
     {
-        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName)
+        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName)
         {
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
@@ -23,17 +23,23 @@ namespace YarnSpinnerConsole
 
             // ok so basically in here we do a quick check of the number of files we have
             // if we only have one AND output is the default then we use that as our output name instead of Output
-            if (inputs.Length == 1 && outputName.Equals("Output.yarnc") && outputStringTableName.Equals("Output.csv"))
+            if (inputs.Length == 1 && outputName.Equals("Output"))
             {
-                var newName = inputs[0].Name.Remove(inputs[0].Extension.Length + 1);
-                outputName = $"{newName}.yarnc";
-                outputStringTableName = $"{newName}.csv";
+                outputName = inputs[0].Name.Remove(inputs[0].Extension.Length + 1);
             }
 
-            var programOutputPath = Path.Combine(outputDirectory.FullName, outputName);
+            if (string.IsNullOrEmpty(outputStringTableName))
+            {
+                outputStringTableName = $"{outputName}-Lines.csv";
+            }
+            if (string.IsNullOrEmpty(outputMetadataTableName))
+            {
+                outputMetadataTableName = $"{outputName}-Metadata.csv";
+            }
+
+            var programOutputPath = Path.Combine(outputDirectory.FullName, $"{outputName}.yarnc");
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
-            var metadataName = Path.GetFileNameWithoutExtension(stringTableOutputPath);
-            var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, $"{metadataName}-metadata.csv");
+            var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
             using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
