@@ -29,12 +29,14 @@ You can install `ysc` by downloading the [most recent release](https://github.co
 ## Compiling Scripts
 
 ```bash
-$ ysc compile [--merge] [--output-directory <output>] <input1.yarn> <input2.yarn> ...
+$ ysc compile [--output-directory <output>] [--output-name <name>] [--output-string-table-name <tablename>] <input1.yarn> <input2.yarn> ...
 ```
 
 `ysc` will compile all of the `.yarn` files you provide, and generate two files for each: a `.yarnc` file containing the compiled file, and a `.csv` containing the extracted string table.
 
-If you specify the `--merge` option, a single `output.yarnc` and `output.csv` file will be created.
+By default the name of the yarn file will be used to name the compiled output.
+If more than one Yarn file is included then you can set a name using the `--output-name` and `--output-string-table-name` flag for the compiled output and string table respectively.
+If a name isn't set the default name of `Output` will be used for both.
 
 ## Running Scripts
 

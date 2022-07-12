@@ -53,11 +53,6 @@
                 outputStringTableOption.AddAlias("--output-string-table-name");
                 outputStringTableOption.Argument.SetDefaultValue("Output.csv");
                 compileCommand.AddOption(outputStringTableOption);
-
-                // TODO: maybe this could be derived from the value of
-                // OutputName? like if you said "Test.yarnc", it'd be
-                // "Test.csv", but if you left it as the default
-                // "Output.yarnc", it would be "Output.csv"
             }
 
             compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string>(CompileCommand.CompileFiles);

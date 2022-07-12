@@ -21,6 +21,15 @@ namespace YarnSpinnerConsole
                 return;
             }
 
+            // ok so basically in here we do a quick check of the number of files we have
+            // if we only have one AND output is the default then we use that as our output name instead of Output
+            if (inputs.Length == 1 && outputName.Equals("Output.yarnc") && outputStringTableName.Equals("Output.csv"))
+            {
+                var newName = inputs[0].Name.Remove(inputs[0].Extension.Length + 1);
+                outputName = $"{newName}.yarnc";
+                outputStringTableName = $"{newName}.csv";
+            }
+
             var programOutputPath = Path.Combine(outputDirectory.FullName, outputName);
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var metadataName = Path.GetFileNameWithoutExtension(stringTableOutputPath);
