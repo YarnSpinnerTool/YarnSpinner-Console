@@ -30,7 +30,7 @@ Here are a few things you can do that will increase the likelihood of your pull 
 
 ### Branches
 
-All of Yarn Spinner's in-progress work happens on the `develop` branch. When we make a release, we merge from `develop` into `master`. This means that `master` is always in a releasable state.
+In-progress work happens on `main` and on feature branches depending on the size of the change. When a feature branch is finished it is merged into `main` and deleted. Releases are made directly from `main`.
 
 ### Code and other contributions
 
