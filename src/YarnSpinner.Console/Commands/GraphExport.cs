@@ -8,8 +8,6 @@ namespace YarnSpinnerConsole
     {
         public static void CreateGraph(FileInfo[] inputs, FileInfo output)
         {
-            Log.Info("graphing!");
-
             var contents = new string[inputs.Length];
             for (int i = 0; i < contents.Length; i++)
             {
@@ -49,7 +47,7 @@ namespace YarnSpinnerConsole
                 }
             }
 
-            Log.Info("Graphed!");
+            Log.Info("Dialogue graph created");
         }
     }
 }
