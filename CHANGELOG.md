@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `upgrade` now does a compile after upgrade to catch some sitations that upgrade but are still invalid.
 - `compile` now has a simpler and more useful naming option structure.
+- `tag` now aborts tagging on malformed Yarn files, this prevents some unexpected behaviour.
 
 ### Removed
 

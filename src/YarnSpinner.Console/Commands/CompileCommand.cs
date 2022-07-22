@@ -25,7 +25,7 @@ namespace YarnSpinnerConsole
             // if we only have one AND output is the default then we use that as our output name instead of Output
             if (inputs.Length == 1 && outputName.Equals("Output"))
             {
-                outputName = inputs[0].Name.Remove(inputs[0].Extension.Length + 1);
+                outputName = inputs[0].Name.Remove(inputs[0].Extension.Length);
             }
 
             if (string.IsNullOrEmpty(outputStringTableName))
