@@ -15,6 +15,7 @@ namespace YarnSpinnerConsole
                 Log.Fatal("No yarn files provided as inputs");
             }
 
+            HashSet<string> excludedFiles = new HashSet<string>();
             var tags = new List<string>();
             foreach (var inputFile in inputs)
             {
@@ -26,7 +27,8 @@ namespace YarnSpinnerConsole
                 bool containsErrors = results.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error);
                 if (containsErrors)
                 {
-                    Log.Error($"Can't check for existing line tags in {inputFile.FullName} because it contains errors. Existing tags will be overwritten");
+                    Log.Error($"Can't check for existing line tags in {inputFile.FullName} because it contains errors. File will be skipped");
+                    excludedFiles.Add(inputFile.FullName);
                     continue;
                 }
 
@@ -35,7 +37,7 @@ namespace YarnSpinnerConsole
             }
 
             var writeOut = new Dictionary<string, string>();
-            foreach (var inputFile in inputs)
+            foreach (var inputFile in inputs.Where(i => !excludedFiles.Contains(i.FullName)))
             {
                 try
                 {
@@ -50,9 +52,9 @@ namespace YarnSpinnerConsole
                     }
                     writeOut[path] = taggedFile;
                 }
-                catch
+                catch (System.Exception e)
                 {
-                    Log.Error($"Unable to read {inputFile.FullName}");
+                    Log.Error($"Unable to tag {inputFile.FullName}:\n{e.Message}");
                 }
             }
 
