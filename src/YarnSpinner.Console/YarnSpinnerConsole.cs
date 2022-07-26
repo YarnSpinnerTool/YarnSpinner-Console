@@ -191,9 +191,14 @@
                 var output = new Option<FileInfo>("-o", "File location for saving the graph. Defaults to a file named dialogue.dot in the current directory");
                 output.AddAlias("--output");
                 graphCommand.AddOption(output);
+
+                var clusterOption = new Option<bool>("-c", "Generate a graph with clustering subgraphs (default: false)");
+                clusterOption.AddAlias("--clustering");
+                clusterOption.Argument.SetDefaultValue(false);
+                graphCommand.AddOption(clusterOption);
             }
 
-            graphCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], FileInfo>(GraphExport.CreateGraph);
+            graphCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], FileInfo, bool>(GraphExport.CreateGraph);
 
             // Create a root command with our subcommands
             var rootCommand = new RootCommand

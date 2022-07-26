@@ -121,6 +121,24 @@ If the `output` option is set you can define a file location for the extracted d
 When exporting an `xlsx` the file type of set when using `--output` *must* be `xlsx` or else the export will fail.
 Defaults to `lines` in the current directory if not set.
 
+## Generating a node graph
+
+```bash
+$ ysc graph <input1.yarn> <input2.yarn> ... [--clustering] [--output <file>]
+```
+
+Creates a graph in the [DOT graph description language](https://graphviz.org/doc/info/lang.html) of all nodes and their links in the Yarn files.
+This allows for a high level look at the structure of the story.
+If positional information is contained with the header of hodes this will also be captured in the output.
+
+If the `output` option is set you can define a file location for the graph.
+By default will name itself `dialogue.dot` if not otherwise set.
+
+If the `clustering` flag is set the graph will cluster nodes into subgraphs based on the file they are contained within.
+This may or may not be of use depending on the visualisation tool used to render the graph.
+
+Note that this generates the graph file itself, to preview it you will need a tool that can import DOT files, such as Graphviz.
+
 ## License
 
 `ysc` is available under the [MIT License](LICENSE.md).
