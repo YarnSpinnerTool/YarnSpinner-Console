@@ -127,7 +127,7 @@ Defaults to `lines` in the current directory if not set.
 $ ysc graph <input1.yarn> <input2.yarn> ... [--clustering] [--format dot|mermaid] [--output <file>]
 ```
 
-Creates a graph in the [DOT](https://graphviz.org/doc/info/lang.html) or [mermaid](LINK) graph description language of all nodes and their links in the Yarn files.
+Creates a graph in the [DOT](https://graphviz.org/doc/info/lang.html) or [mermaid](https://mermaid-js.github.io/mermaid/) graph description language of all nodes and their links in the Yarn files.
 This allows for a high level look at the structure of the story.
 If positional information is contained with the header of hodes this will also be captured in the output where possible.
 
