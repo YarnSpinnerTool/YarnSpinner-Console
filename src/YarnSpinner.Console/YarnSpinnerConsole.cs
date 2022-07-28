@@ -182,6 +182,29 @@
 
             extractCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, string[], FileInfo, string>(StringExtractCommand.ExtractStrings);
 
+            var graphCommand = new Command("graph", "Exports a graph view of the dialogue");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the yarn files to use for the graph");
+                inputsArgument.Arity = ArgumentArity.OneOrMore;
+                graphCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var output = new Option<FileInfo>("-o", "File location for saving the graph. Defaults to a file named dialogue in the current directory");
+                output.AddAlias("--output");
+                graphCommand.AddOption(output);
+
+                var exportFormat = new Option<string>("--format", "The graph format, defaults to dot").FromAmong("dot", "mermaid");
+                exportFormat.AddAlias("-f");
+                exportFormat.Argument.SetDefaultValue("dot");
+                graphCommand.AddOption(exportFormat);
+
+                var clusterOption = new Option<bool>("-c", "Generate a graph with clustering subgraphs (default: false)");
+                clusterOption.AddAlias("--clustering");
+                clusterOption.Argument.SetDefaultValue(false);
+                graphCommand.AddOption(clusterOption);
+            }
+
+            graphCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], FileInfo, string, bool>(GraphExport.CreateGraph);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -192,6 +215,7 @@
                 dumpTokensCommand,
                 tagCommand,
                 extractCommand,
+                graphCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
