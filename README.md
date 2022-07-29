@@ -133,7 +133,7 @@ If positional information is contained with the header of hodes this will also b
 
 If the `output` option is set you can define a file location for the graph.
 By default will name itself `dialogue` if not otherwise set.
-The default file extension will change depending on the `format`, using `.dot` and `mmd` for DOT and mermaid graphs respectively.
+The default file extension will change depending on the `format`, using `.dot` and `.mmd` for DOT and mermaid graphs respectively.
 
 If the `clustering` flag is set the graph will cluster nodes into subgraphs based on the file they are contained within.
 This may or may not be of use depending on the visualisation tool used to render the graph.
@@ -142,7 +142,7 @@ The `format` option can be set to determine the graph format.
 Can be either `dot` or `mermaid`.
 Will default to `dot` if not otherwise set.
 
-Note that this generates the graph file itself, to preview it you will need a tool that can import and visualise DOT or mermaid files..
+Note that this generates the graph file itself, to preview it you will need a tool that can import and visualise DOT or mermaid files.
 
 ## License
 
