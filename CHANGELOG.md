@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+### Changed
+
+### Removed
+
+## [2.2.0] 2022-10-31
+
+### Added
+
 - New subcommand `extract` allows for extraction of lines for the purpose of VO.
 - New subcommand `graph` allows for exporting a dot graph file of your dialogue.
 
@@ -16,8 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `upgrade` now does a compile after upgrade to catch some sitations that upgrade but are still invalid.
 - `compile` now has a simpler and more useful naming option structure.
 - `tag` now aborts tagging on malformed Yarn files, this prevents some unexpected behaviour.
-
-### Removed
 
 ## [2.1.0] 2022-02-17
 
