@@ -1,0 +1,52 @@
+syntax = "proto3";
+package Yarn;
+
+import "yarn_spinner.proto";
+
+// Compiler output from ysc.
+message CompilerOutput {
+    // The compiled Yarn program.
+    Program program = 1;
+
+    // The strings extracted from the program.
+    map <string, StringInfo> strings = 2;
+
+    // The diagnostic messages produced during compilation.
+    repeated Diagnostic diagnostics = 3;
+}
+
+// A range of text in a document.
+message Range {
+    Position start = 1;
+    Position end = 2;
+}
+
+message Position {
+    int32 line = 1;
+    int32 character = 2;
+}
+
+message Diagnostic {
+    enum Severity {
+        // An error, which has caused compilation to fail.
+        Error = 0;
+        // A warning.
+        Warning = 1;
+        // An informational note.
+        Info = 2;
+    }
+    string message = 1;
+
+    // The severity of the diagnostic.
+    Severity severity = 2;
+
+    // The range of text that this diagnostic is about.
+    Range range = 3;
+
+    // The path of the file that this diagnostic is about.
+    string fileName = 4;
+}
+
+message StringInfo {
+    string text = 1;
+}

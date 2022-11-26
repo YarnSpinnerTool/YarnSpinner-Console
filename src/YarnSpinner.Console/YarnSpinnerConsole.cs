@@ -56,9 +56,12 @@
                 var outputMetadataTableOption = new Option<string>("-m", "Output metadata table filename (default: {name}-Metadata.csv");
                 outputMetadataTableOption.AddAlias("--output-metadata-table-name");
                 compileCommand.AddOption(outputMetadataTableOption);
+
+                var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
+                compileCommand.AddOption(stdoutOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
 
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {
