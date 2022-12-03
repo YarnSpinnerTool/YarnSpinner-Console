@@ -10,7 +10,8 @@ namespace YarnSpinnerConsole
         {
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
-            if (stdout) {
+            if (stdout)
+            {
                 EmitCompilationResult(compiledResults, System.Console.Out);
                 return;
             }
@@ -46,7 +47,7 @@ namespace YarnSpinnerConsole
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
-            using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
+            using (var outStream = new FileStream(programOutputPath, FileMode.Create))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
             {
                 compiledResults.Program.WriteTo(codedStream);
@@ -121,14 +122,16 @@ namespace YarnSpinnerConsole
             var compilerOutput = new Yarn.CompilerOutput();
             compilerOutput.Program = program;
 
-            foreach (var entry in compiledResults.StringTable) {
+            foreach (var entry in compiledResults.StringTable)
+            {
                 var tableEntry = new Yarn.StringInfo();
                 tableEntry.Text = entry.Value.text;
 
                 compilerOutput.Strings.Add(entry.Key, tableEntry);
             }
 
-            foreach (var diagnostic in compiledResults.Diagnostics) {
+            foreach (var diagnostic in compiledResults.Diagnostics)
+            {
                 var diag = new Yarn.Diagnostic();
                 diag.Message = diagnostic.Message;
                 diag.FileName = diagnostic.FileName;
