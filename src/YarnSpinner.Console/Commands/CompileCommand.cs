@@ -48,7 +48,7 @@ namespace YarnSpinnerConsole
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
-            using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
+            using (var outStream = new FileStream(programOutputPath, FileMode.Create))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
             {
                 compiledResults.Program.WriteTo(codedStream);
