@@ -208,6 +208,15 @@
 
             graphCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], FileInfo, string, bool>(GraphExport.CreateGraph);
 
+            var versionCommand = new Command("version", "Show version info");
+            versionCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
+            {
+                Console.WriteLine($"ysc version " + typeof(YarnSpinnerConsole).Assembly.GetName().Version);
+                
+                Console.WriteLine($"YarnSpinner.dll version " + typeof(Yarn.Dialogue).Assembly.GetName().Version);
+                Console.WriteLine($"YarnSpinner.Compiler.dll version " + typeof(Yarn.Compiler.Compiler).Assembly.GetName().Version);
+            });
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -219,6 +228,7 @@
                 tagCommand,
                 extractCommand,
                 graphCommand,
+                versionCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
