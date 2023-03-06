@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Updated to [Yarn Spinner v2.3.0](https://github.com/YarnSpinnerTool/YarnSpinner/releases/tag/v2.3.0).
+
 ### Removed
 
 ## [2.3.0] 2022-10-31
