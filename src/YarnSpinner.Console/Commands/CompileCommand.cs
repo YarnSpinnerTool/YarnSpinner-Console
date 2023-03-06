@@ -10,7 +10,8 @@ namespace YarnSpinnerConsole
         {
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
-            if (stdout) {
+            if (stdout)
+            {
                 EmitCompilationResult(compiledResults, System.Console.Out);
                 return;
             }
@@ -30,7 +31,8 @@ namespace YarnSpinnerConsole
             // if we only have one AND output is the default then we use that as our output name instead of Output
             if (inputs.Length == 1 && outputName.Equals("Output"))
             {
-                outputName = inputs[0].Name.Remove(inputs[0].Extension.Length);
+                // weird that this doesn't exist in the FileInfo...
+                outputName = Path.GetFileNameWithoutExtension(inputs[0].Name);
             }
 
             if (string.IsNullOrEmpty(outputStringTableName))
@@ -46,7 +48,7 @@ namespace YarnSpinnerConsole
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
-            using (var outStream = new FileStream(programOutputPath, FileMode.OpenOrCreate))
+            using (var outStream = new FileStream(programOutputPath, FileMode.Create))
             using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
             {
                 compiledResults.Program.WriteTo(codedStream);
