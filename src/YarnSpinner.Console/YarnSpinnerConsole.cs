@@ -26,6 +26,25 @@
                 },
         };
 
+        public class CompileCommandOptions
+        {
+            public FileInfo[] Inputs { get; set; }
+
+            public DirectoryInfo OutputDirectory { get; set; }
+
+            public string OutputName { get; set; }
+
+            public string OutputStringTableName { get; set; }
+
+            public string OutputMetadataTableName { get; set; }
+
+            public string OutputDebugInfoName { get; set; }
+
+            public bool Stdout { get; set; }
+
+            public bool Debug { get; set; }
+        }
+
         /// <summary>
         /// The entry point for the app.
         /// </summary>
@@ -57,13 +76,21 @@
                 outputMetadataTableOption.AddAlias("--output-metadata-table-name");
                 compileCommand.AddOption(outputMetadataTableOption);
 
+                var outputDebugInfoOption = new Option<string>("-d", "Output debug information filename (default: {name}-Debug.json");
+                outputDebugInfoOption.AddAlias("--output-debug-info-name");
+                compileCommand.AddOption(outputDebugInfoOption);
+
                 var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
                 compileCommand.AddOption(stdoutOption);
+
+                var generateDebugInfoOption = new Option<bool>("-g", "Generate debug files with line number information");
+                generateDebugInfoOption.AddAlias("--debug");
+                compileCommand.AddOption(generateDebugInfoOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<CompileCommandOptions>(CompileCommand.CompileFiles);
 
-            var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
+            Command runCommand = new Command("run", "Runs Yarn scripts in an interactive manner");
             {
                 Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to run")
                 {
