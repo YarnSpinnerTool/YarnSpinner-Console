@@ -10,11 +10,8 @@ namespace YarnSpinnerConsole
     {
         public static void TagFiles(FileInfo[] inputs, DirectoryInfo outputDirectory)
         {
-            if (inputs == null)
-            {
-                Log.Fatal("No yarn files provided as inputs");
-            }
-
+            inputs = CompileCommand.GetYarnFiles(inputs);
+            
             HashSet<string> excludedFiles = new HashSet<string>();
             var tags = new List<string>();
             foreach (var inputFile in inputs)

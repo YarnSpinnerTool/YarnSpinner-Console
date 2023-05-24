@@ -116,6 +116,25 @@ namespace YarnSpinnerConsole
             }
         }
 
+        public static FileInfo[] GetYarnFiles(FileInfo[] inputs) {
+            var anyFileIsProject = inputs.Any(i => i.Extension == ".yarnproject");
+
+            if (anyFileIsProject)
+            {
+                if (inputs.Length > 1)
+                {
+                    Log.Fatal($"When compiling a Yarn Project file, you must specify only a single file path.");
+                }
+
+                var project = Project.LoadFromFile(inputs.First().FullName);
+                return project.SourceFiles.Select(f => new FileInfo(f)).ToArray();
+            }
+            else
+            {
+                return inputs;
+            }
+        }
+
         private static void EmitCompilationResult(CompilationResult compiledResults, TextWriter textWriter)
         {
             var program = compiledResults.Program;

@@ -35,7 +35,7 @@
         {
             var compileCommand = new System.CommandLine.Command("compile", "Compiles Yarn scripts.");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The files to compile");
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to compile, or a collection of .yarn files to compile.");
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 compileCommand.AddArgument(inputsArgument.ExistingOnly());
 
@@ -65,7 +65,7 @@
 
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to run")
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to run, or a collection of .yarn files to run. One of the specified files must contain the start node.")
                 {
                     Arity = ArgumentArity.OneOrMore,
                 };
@@ -87,7 +87,7 @@
 
             var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to upgrade")
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to upgrade the files of, or a collection of .yarn files to upgrade.")
                 {
                     Arity = ArgumentArity.OneOrMore,
                 };
@@ -106,7 +106,7 @@
 
             var dumpTreeCommand = new System.CommandLine.Command("print-tree", "Parses a Yarn script and produces a human-readable syntax tree.");
             {
-                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "the file to print a parse tree from")
+                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "The .yarnproject file indicating files to generate a parse tree from, or a collection of .yarn files.")
                 {
                     Arity = ArgumentArity.OneOrMore,
                 };
@@ -127,7 +127,7 @@
 
             var dumpTokensCommand = new System.CommandLine.Command("print-tokens", "Parses a Yarn script and produces list of parsed tokens.");
             {
-                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "the file to print a token list from")
+                Argument<FileInfo[]> inputArgument = new Argument<FileInfo[]>("input", "The .yarnproject file to generate a token list from, or a collection of .yarn files.")
                 {
                     Arity = ArgumentArity.OneOrMore,
                 };
@@ -148,7 +148,7 @@
 
             var tagCommand = new Command("tag", "Tags a Yarn script with localisation line IDs");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The files to tag with line IDs");
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file indicating files to add tags to, or a collection of .yarn files");
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 tagCommand.AddArgument(inputsArgument.ExistingOnly());
 
@@ -161,7 +161,7 @@
 
             var extractCommand = new Command("extract", "Extracts strings from the provided files");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the files to extract strings from");
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file indicating Yarn files to extract strings from, or a collection of .yarn files.");
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 extractCommand.AddArgument(inputsArgument.ExistingOnly());
 
@@ -187,7 +187,7 @@
 
             var graphCommand = new Command("graph", "Exports a graph view of the dialogue");
             {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "the yarn files to use for the graph");
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file indicating Yarn files to export a graph of, or a collection of .yarn files.");
                 inputsArgument.Arity = ArgumentArity.OneOrMore;
                 graphCommand.AddArgument(inputsArgument.ExistingOnly());
 
@@ -240,12 +240,12 @@
             return rootCommand.InvokeAsync(args).Result;
         }
 
-        // compiles a given yarn story designed to be called by runners or
-        // the generic compile command does no writing
+        // Compiles a given Yarn story. Designed to be called by runners or the
+        // generic compile command. Does no writing.
         public static CompilationResult CompileProgram(FileInfo[] inputs)
         {
-            // The list of all files and their associated compiled results
-            var results = new List<(FileInfo file, Yarn.Program program, IDictionary<string, StringInfo> stringTable)>();
+            // Given the list of files that we've received, figure out which Yarn files to compile. (If we were given a Yarn Project, this method will figure out which source files to use.)
+            inputs = CompileCommand.GetYarnFiles(inputs);
 
             var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
 
