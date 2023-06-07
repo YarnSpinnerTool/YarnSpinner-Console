@@ -63,6 +63,15 @@
 
             compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
 
+            var listSourcesCommand = new System.CommandLine.Command("list-sources", "Lists Yarn sources for a Yarn project.");
+            {
+                Argument<FileInfo> yarnprojectArgument = new Argument<FileInfo>("yarnproject", "The .yarnproject file to list .yarn sources for.");
+                yarnprojectArgument.Arity = ArgumentArity.ExactlyOne;
+                listSourcesCommand.AddArgument(yarnprojectArgument.ExistingOnly());
+            }
+
+            listSourcesCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo>(ListSourcesCommand.ListSources);
+
             var runCommand = new System.CommandLine.Command("run", "Runs Yarn scripts in an interactive manner");
             {
                 Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to run, or a collection of .yarn files to run. One of the specified files must contain the start node.")
@@ -230,6 +239,7 @@
             {
                 runCommand,
                 compileCommand,
+                listSourcesCommand,
                 upgradeCommand,
                 dumpTreeCommand,
                 dumpTokensCommand,
