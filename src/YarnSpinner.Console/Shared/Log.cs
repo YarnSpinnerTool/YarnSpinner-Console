@@ -13,6 +13,12 @@ namespace YarnSpinnerConsole
             Console.WriteLine(text);
             Console.ResetColor();
         }
+        public static void PrintLine(string text)
+        {
+            Console.ResetColor();
+            Console.WriteLine(text);
+            Console.ResetColor();
+        }
 
         public static void Info(string text)
         {

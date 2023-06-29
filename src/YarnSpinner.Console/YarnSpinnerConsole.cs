@@ -217,6 +217,14 @@
                 Console.WriteLine($"YarnSpinner.Compiler.dll version " + typeof(Yarn.Compiler.Compiler).Assembly.GetName().Version);
             });
 
+            var browsebinaryCommand = new Command("browse-binary", "Browses some of the common data inside of a compiled yarn program");
+            {
+                Argument<FileInfo> compiledInput = new Argument<FileInfo>("compiledInput", "The .yarnc file you want to browse");
+                compiledInput.Arity = ArgumentArity.ExactlyOne;
+                browsebinaryCommand.AddArgument(compiledInput.ExistingOnly());
+            }
+            browsebinaryCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo>(BrowseCompiledBinaryCommand.BrowseBinary);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -228,6 +236,7 @@
                 tagCommand,
                 extractCommand,
                 graphCommand,
+                browsebinaryCommand,
                 versionCommand,
             };
 
