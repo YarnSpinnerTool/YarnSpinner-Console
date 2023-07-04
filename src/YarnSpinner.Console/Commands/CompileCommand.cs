@@ -2,15 +2,17 @@ namespace YarnSpinnerConsole
 {
     using System.IO;
     using System.Linq;
+    using System.Text.Json;
     using Yarn.Compiler;
 
     public static class CompileCommand
     {
-        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName, bool stdout)
+        public static void CompileFiles(YarnSpinnerConsole.CompileCommandOptions options)
         {
+            var inputs = options.Inputs;
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
-            if (stdout)
+            if (options.Stdout)
             {
                 EmitCompilationResult(compiledResults, System.Console.Out);
                 return;
@@ -29,11 +31,16 @@ namespace YarnSpinnerConsole
 
             // ok so basically in here we do a quick check of the number of files we have
             // if we only have one AND output is the default then we use that as our output name instead of Output
+            var outputName = options.OutputName;
             if (inputs.Length == 1 && outputName.Equals("Output"))
             {
                 // weird that this doesn't exist in the FileInfo...
                 outputName = Path.GetFileNameWithoutExtension(inputs[0].Name);
             }
+
+            var outputStringTableName = options.OutputStringTableName;
+            var outputMetadataTableName = options.OutputMetadataTableName;
+            var outputDebugInfoName = options.OutputDebugInfoName;
 
             if (string.IsNullOrEmpty(outputStringTableName))
             {
@@ -44,7 +51,14 @@ namespace YarnSpinnerConsole
                 outputMetadataTableName = $"{outputName}-Metadata.csv";
             }
 
+            if (string.IsNullOrEmpty(outputDebugInfoName))
+            {
+                outputDebugInfoName = $"{outputName}-Debug.json";
+            }
+
+            var outputDirectory = options.OutputDirectory;
             var programOutputPath = Path.Combine(outputDirectory.FullName, $"{outputName}.yarnc");
+            var debugInfoOutputPath = Path.Combine(outputDirectory.FullName, outputDebugInfoName);
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
@@ -55,6 +69,37 @@ namespace YarnSpinnerConsole
             }
 
             Log.Info($"Wrote {programOutputPath}");
+
+            if (options.Debug)
+            {
+                using (var outStream = new FileStream(debugInfoOutputPath, FileMode.Create))
+                using (var jsonWriter = new Utf8JsonWriter(outStream))
+                {
+                    jsonWriter.WriteStartObject();
+
+                    foreach (var (name, node) in compiledResults.Program.Nodes)
+                    {
+                        jsonWriter.WritePropertyName(name);
+                        jsonWriter.WriteStartArray();
+
+                        for (var index = 0; index < node.Instructions.Count; index++)
+                        {
+                            var lineInfo = compiledResults.DebugInfo[name].GetLineInfo(index);
+
+                            jsonWriter.WriteStartObject();
+                            jsonWriter.WriteNumber("line", lineInfo.LineNumber);
+                            jsonWriter.WriteNumber("column", lineInfo.CharacterNumber);
+                            jsonWriter.WriteEndObject();
+                        }
+
+                        jsonWriter.WriteEndArray();
+                    }
+
+                    jsonWriter.WriteEndObject();
+                }
+
+                Log.Info($"Wrote {debugInfoOutputPath}");
+            }
 
             using (var writer = new StreamWriter(stringTableOutputPath))
             {
