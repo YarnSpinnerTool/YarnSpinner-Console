@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Added support for using .yarnproject files on all commands.
 - Added the `list-sources` command, which lists all .yarn files used by a Yarn Project.
+- Added the `browse-binary` command, which dumps out all nodes, their headers, and declared variables embedded within the compiled Yarn program. 
 
 ### Changed
 
