@@ -8,15 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Added support for using .yarnproject files on all commands.
-- Added the `list-sources` command, which lists all .yarn files used by a Yarn Project.
-- Added the `browse-binary` command, which dumps out all nodes, their headers, and declared variables embedded within the compiled Yarn program. 
-
 ### Changed
 
 ### Removed
 
-## [2.3.1] 2023-03-6
+## [2.3.2] 2023-07-07
+
+### Added
+
+- Added support for using .yarnproject files on all commands.
+- Added the `list-sources` command, which lists all .yarn files used by a Yarn Project.
+- Added the `browse-binary` command, which dumps out all nodes, their headers, and declared variables embedded within the compiled Yarn program. 
+
+## [2.3.1] 2023-03-06
 
 ### Added
 
