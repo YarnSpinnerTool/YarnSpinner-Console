@@ -2,6 +2,7 @@ namespace YarnSpinnerConsole
 {
     using System;
     using System.IO;
+    using System.Linq;
     
     public static class RunCommand
     {
@@ -10,6 +11,16 @@ namespace YarnSpinnerConsole
             // this will be a new interactive command for running yarn
             // stories will compile and then run them
             var results = YarnSpinnerConsole.CompileProgram(inputs);
+
+            if (results.Diagnostics.Any(d => d.Severity == Yarn.Compiler.Diagnostic.DiagnosticSeverity.Error))
+            {
+                Log.Error($"Not running files because errors were encountered.");
+                foreach (var diagnostic in results.Diagnostics)
+                {
+                    Log.Diagnostic(diagnostic);
+                }
+                return;
+            }
 
             string TextForLine(string lineID)
             {

@@ -8,7 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- a `create-proj` command which will create a new default valued Yarn project file
+
 ### Changed
+
+- the `run` command will now correctly abort when asked to run invalid Yarn
 
 ### Removed
 

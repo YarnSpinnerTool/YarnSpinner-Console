@@ -234,6 +234,14 @@
             }
             browsebinaryCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo>(BrowseCompiledBinaryCommand.BrowseBinary);
 
+            var createProjectFileCommand = new Command("create-proj", "Creates a yarn project file with default values");
+            {
+                Argument<string> projectNameInput = new Argument<string>("project-name", "The project name");
+                projectNameInput.Arity = ArgumentArity.ExactlyOne;
+                createProjectFileCommand.AddArgument(projectNameInput);
+            }
+            createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string>(CreateProjectFileCommand.CreateProjFile);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -247,6 +255,7 @@
                 extractCommand,
                 graphCommand,
                 browsebinaryCommand,
+                createProjectFileCommand,
                 versionCommand,
             };
 
