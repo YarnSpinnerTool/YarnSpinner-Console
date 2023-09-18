@@ -10,12 +10,6 @@ namespace YarnSpinnerConsole
         {
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
-            if (stdout)
-            {
-                EmitCompilationResult(compiledResults, System.Console.Out);
-                return;
-            }
-
             foreach (var diagnostic in compiledResults.Diagnostics)
             {
                 Log.Diagnostic(diagnostic);
@@ -24,6 +18,13 @@ namespace YarnSpinnerConsole
             if (compiledResults.Diagnostics.Any(d => d.Severity == Diagnostic.DiagnosticSeverity.Error))
             {
                 Log.Error($"Not compiling files because errors were encountered.");
+                System.Environment.Exit(1);
+                return;
+            }
+
+            if (stdout)
+            {
+                EmitCompilationResult(compiledResults, System.Console.Out);
                 return;
             }
 
