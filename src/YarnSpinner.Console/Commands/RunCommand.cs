@@ -3,7 +3,8 @@ namespace YarnSpinnerConsole
     using System;
     using System.IO;
     using System.Linq;
-    
+    using Yarn;
+
     public static class RunCommand
     {
         public static void RunFiles(FileInfo[] inputs, string startNode, bool autoAdvance)
@@ -37,6 +38,24 @@ namespace YarnSpinnerConsole
                     LogDebugMessage = (m) => Log.Info(m),
                     LogErrorMessage = (m) => Log.Error(m),
                 };
+
+                dialogue.Library.RegisterFunction("visited", (string nodeName) =>
+                {
+                    var visitedCountVariableName = Library.GenerateUniqueVisitedVariableForNode(nodeName);
+
+                    return storage.TryGetValue<int>(visitedCountVariableName, out var count)
+                        ? count > 0
+                        : false;
+                });
+
+                dialogue.Library.RegisterFunction("visited_count", (string nodeName) =>
+                {
+                    var visitedCountVariableName = Library.GenerateUniqueVisitedVariableForNode(nodeName);
+
+                    return storage.TryGetValue<int>(visitedCountVariableName, out var count)
+                        ? count
+                        : 0;
+                });
 
                 dialogue.SetProgram(program);
                 dialogue.SetNode(startNode);
