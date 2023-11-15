@@ -8,14 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- a `create-proj` command which will create a new default valued Yarn project file
+### Changed
+
+### Removed
+
+## [2.4.0] 2023-11-15
+
+### Added
+
+- Added a `create-proj` command which will create a new Yarn Project file.
 
 ### Changed
 
-- the `run` command will now correctly abort when asked to run invalid Yarn
-- A compiler error will no longer return a 0 exit code
-
-### Removed
+- The `run` command will now correctly abort when asked to run invalid Yarn.
+- A compiler error will no longer return a 0 exit code.
 
 ## [2.3.2] 2023-07-07
 
