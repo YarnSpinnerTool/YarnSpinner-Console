@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - the `run` command will now correctly abort when asked to run invalid Yarn
+- A compiler error will no longer return a 0 exit code
 
 ### Removed
 
