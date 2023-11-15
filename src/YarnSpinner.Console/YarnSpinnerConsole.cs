@@ -277,6 +277,30 @@
 
             var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
 
+            // Declare the existence of 'visited' and 'visited_count'
+            var visitedDecl = new DeclarationBuilder()
+                .WithName("visited")
+                .WithType(
+                    new FunctionTypeBuilder()
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Boolean)
+                        .FunctionType)
+                .Declaration;
+
+            var visitedCountDecl = new DeclarationBuilder()
+                .WithName("visited_count")
+                .WithType(
+                    new FunctionTypeBuilder()
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Number)
+                        .FunctionType)
+                .Declaration;
+
+            compilationJob.VariableDeclarations = (compilationJob.VariableDeclarations ?? Array.Empty<Declaration>()).Concat(new[] {
+                visitedDecl,
+                visitedCountDecl,
+            });
+
             CompilationResult compilationResult;
 
             try
