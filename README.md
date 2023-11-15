@@ -26,6 +26,20 @@ You can install `ysc` by downloading the [most recent release](https://github.co
 </p>
 </details>
 
+## Running Scripts
+
+```bash
+$ ysc run [--auto-advance] [--start-node <Start>] <input1.yarn> <input2.yarn> ...
+```
+
+`ysc` will compile all of the `.yarn` files provided and then begin running them from the `Start` node.
+By specifiying the `--start-node` option you can configure which node is used as the entry point for the story, defaulting to `Start` if not set.
+
+If you specify the `--auto-advance` flag, the normal lines of dialogue will be presented automatically, only holding the program up when an option or shortcut is reached.
+This flag is not set by default meaning each line of dialogue will halt the story until manually advanced with the `return`/`enter` key.
+
+**NOTE:** Custom functions are not supported and encountering one will cause the story to be aborted.
+
 ## Compiling Scripts
 
 ```bash
@@ -40,19 +54,15 @@ If a name isn't set and there are more than one input, the default name of `Outp
 
 If further customisation `--output-string-table-name` and `--output-metadata-table-name` allow overriding the filename of the string and metadata tables respectively.
 
-## Running Scripts
+## Listing Sources
 
 ```bash
-$ ysc run [--auto-advance] [--start-node <Start>] <input1.yarn> <input2.yarn> ...
+$ ysc list-sources <input.yarnproject>
 ```
 
-`ysc` will compile all of the `.yarn` files provided and then begin running them from the `Start` node.
-By specifiying the `--start-node` option you can configure which node is used as the entry point for the story, defaulting to `Start` if not set.
-
-If you specify the `--auto-advance` flag, the normal lines of dialogue will be presented automatically, only holding the program up when an option or shortcut is reached.
-This flag is not set by default meaning each line of dialogue will halt the story until manually advanced with the `return`/`enter` key.
-
-**NOTE:** Custom functions are not supported and encountering one will cause the story to be aborted.
+Lists all of the yarn files that are associated with the `input.yarnproject` Yarn Project.
+This reads both the includes and excludes of the Yarn Project and will work out what files match those filters.
+You can use this to make sure you have set your globstar values correctly.
 
 ## Upgrading Scripts
 
@@ -143,6 +153,23 @@ Can be either `dot` or `mermaid`.
 Will default to `dot` if not otherwise set.
 
 Note that this generates the graph file itself, to preview it you will need a tool that can import and visualise DOT or mermaid files.
+
+## Browsing Compiled Binary
+
+```bash
+$ ysc browse-binary <input.yarnproject>
+```
+
+Presents common information inside of the compiled `input.yarnproject`.
+Displays all nodes and their headers, and all variables declarations and their default values.
+
+## Creating Yarn Project
+
+```bash
+$ ysc create-proj <project-name> 
+```
+
+Creates a new default Yarn Project named `project-name`.
 
 ## License
 

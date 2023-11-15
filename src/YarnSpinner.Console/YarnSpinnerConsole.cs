@@ -1,7 +1,6 @@
 ﻿namespace YarnSpinnerConsole
 {
     using System;
-    using System.Collections.Generic;
     using System.CommandLine;
     using System.IO;
     using System.Linq;
@@ -18,12 +17,12 @@
         public static JsonSerializerOptions JsonSerializationOptions => new JsonSerializerOptions
         {
             WriteIndented = true,
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             IgnoreNullValues = true,
             Converters =
-                {
-                    new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase),
-                },
+            {
+                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+            },
         };
 
         /// <summary>
@@ -221,7 +220,7 @@
             versionCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
             {
                 Console.WriteLine($"ysc version " + typeof(YarnSpinnerConsole).Assembly.GetName().Version);
-                
+
                 Console.WriteLine($"YarnSpinner.dll version " + typeof(Yarn.Dialogue).Assembly.GetName().Version);
                 Console.WriteLine($"YarnSpinner.Compiler.dll version " + typeof(Yarn.Compiler.Compiler).Assembly.GetName().Version);
             });
