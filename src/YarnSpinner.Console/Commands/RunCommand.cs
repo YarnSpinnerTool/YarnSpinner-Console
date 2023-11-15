@@ -39,24 +39,6 @@ namespace YarnSpinnerConsole
                     LogErrorMessage = (m) => Log.Error(m),
                 };
 
-                dialogue.Library.RegisterFunction("visited", (string nodeName) =>
-                {
-                    var visitedCountVariableName = Library.GenerateUniqueVisitedVariableForNode(nodeName);
-
-                    return storage.TryGetValue<int>(visitedCountVariableName, out var count)
-                        ? count > 0
-                        : false;
-                });
-
-                dialogue.Library.RegisterFunction("visited_count", (string nodeName) =>
-                {
-                    var visitedCountVariableName = Library.GenerateUniqueVisitedVariableForNode(nodeName);
-
-                    return storage.TryGetValue<int>(visitedCountVariableName, out var count)
-                        ? count
-                        : 0;
-                });
-
                 dialogue.SetProgram(program);
                 dialogue.SetNode(startNode);
 
