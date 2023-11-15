@@ -238,8 +238,13 @@
                 Argument<string> projectNameInput = new Argument<string>("project-name", "The project name");
                 projectNameInput.Arity = ArgumentArity.ExactlyOne;
                 createProjectFileCommand.AddArgument(projectNameInput);
+
+                var unityExclude = new Option<bool>("-u", "Set the excludeFiles value to ignore folders with trailing ~ (default: false)");
+                unityExclude.AddAlias("--unity-exclusion");
+                unityExclude.Argument.SetDefaultValue(false);
+                createProjectFileCommand.AddOption(unityExclude);
             }
-            createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string>(CreateProjectFileCommand.CreateProjFile);
+            createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string, bool>(CreateProjectFileCommand.CreateProjFile);
 
             // Create a root command with our subcommands
             var rootCommand = new RootCommand

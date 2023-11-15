@@ -166,10 +166,11 @@ Displays all nodes and their headers, and all variables declarations and their d
 ## Creating Yarn Project
 
 ```bash
-$ ysc create-proj <project-name> 
+$ ysc create-proj [--unity-exclusion] <project-name> 
 ```
 
 Creates a new default Yarn Project named `project-name`.
+Defaults to setting no exclusions, if the project is intended to be used in Unity setting the `--unity-exclusion` flag will exclude folders with a trailing ~ which is what Unity expects.
 
 ## License
 

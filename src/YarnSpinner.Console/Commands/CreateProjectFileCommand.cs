@@ -5,9 +5,15 @@ namespace YarnSpinnerConsole
 
     public static class CreateProjectFileCommand
     {
-        public static void CreateProjFile(string projectName)
+        public static void CreateProjFile(string projectName, bool unityExclusion)
         {
             Project proj = new Project();
+
+            if (unityExclusion)
+            {
+                proj.ExcludeFilePatterns = new[] { "**/*~/*" };
+            }
+
             var path = $"./{projectName}.yarnproject";
 
             if (File.Exists(path))
