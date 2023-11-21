@@ -10,9 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- `project-name` now has a `--unity-exclusion` flag which sets the exclusion field to default more appropriate for Unity.
-
 ### Removed
+
+## [2.4.1] 2023-11-21
+
+### Changed
+
+- `project-name` now has a `--unity-exclusion` flag which sets the exclusion field to default more appropriate for Unity.
+- Fixed a bug where the `visited` and `visit_count` functions were declared twice.
 
 ## [2.4.0] 2023-11-15
 
