@@ -55,38 +55,10 @@ namespace YarnSpinnerConsole
             {
                 var program = compiledResults.Program;
 
-                var compilerOutput = new Yarn.CompilerOutput();
-                compilerOutput.Program = program;
+                var settings = new Google.Protobuf.JsonFormatter.Settings(true);
+                var jsonFormatter = new Google.Protobuf.JsonFormatter(settings);
 
-                foreach (var entry in compiledResults.StringTable) {
-                    var tableEntry = new Yarn.StringInfo();
-                    tableEntry.Text = entry.Value.text;
-
-                    compilerOutput.Strings.Add(entry.Key, tableEntry);
-                }
-
-                foreach (var diagnostic in compiledResults.Diagnostics) {
-                    var diag = new Yarn.Diagnostic();
-                    diag.Message = diagnostic.Message;
-                    diag.FileName = diagnostic.FileName;
-                    diag.Range = new Yarn.Range
-                    {
-                        Start =
-                        {
-                            Line = diagnostic.Range.Start.Line,
-                            Character = diagnostic.Range.Start.Character,
-                        },
-                        End =
-                        {
-                            Line = diagnostic.Range.End.Line,
-                            Character = diagnostic.Range.End.Character,
-                        },
-                    };
-                    diag.Severity = (Yarn.Diagnostic.Types.Severity)diagnostic.Severity;
-                    compilerOutput.Diagnostics.Add(diag);
-                }
-
-                string jsonOutput = JsonSerializer.Serialize(compilerOutput);
+                string jsonOutput = jsonFormatter.Format(program);
                 File.WriteAllText(programOutputPath, jsonOutput);
             }
             else
