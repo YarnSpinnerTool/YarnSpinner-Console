@@ -1,12 +1,14 @@
+
 namespace YarnSpinnerConsole
 {
     using System.IO;
     using System.Linq;
+    using System.Text.Json;
     using Yarn.Compiler;
 
     public static class CompileCommand
     {
-        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName, bool stdout)
+        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName, bool stdout, bool json)
         {
             var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
@@ -45,14 +47,55 @@ namespace YarnSpinnerConsole
                 outputMetadataTableName = $"{outputName}-Metadata.csv";
             }
 
-            var programOutputPath = Path.Combine(outputDirectory.FullName, $"{outputName}.yarnc");
+            var programOutputPath = Path.Combine(outputDirectory.FullName, $"{outputName}.{(json ? "json" : "yarnc")}");
             var stringTableOutputPath = Path.Combine(outputDirectory.FullName, outputStringTableName);
             var stringMetadatOutputPath = Path.Combine(outputDirectory.FullName, outputMetadataTableName);
 
-            using (var outStream = new FileStream(programOutputPath, FileMode.Create))
-            using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
+            if (json)
             {
-                compiledResults.Program.WriteTo(codedStream);
+                var program = compiledResults.Program;
+
+                var compilerOutput = new Yarn.CompilerOutput();
+                compilerOutput.Program = program;
+
+                foreach (var entry in compiledResults.StringTable) {
+                    var tableEntry = new Yarn.StringInfo();
+                    tableEntry.Text = entry.Value.text;
+
+                    compilerOutput.Strings.Add(entry.Key, tableEntry);
+                }
+
+                foreach (var diagnostic in compiledResults.Diagnostics) {
+                    var diag = new Yarn.Diagnostic();
+                    diag.Message = diagnostic.Message;
+                    diag.FileName = diagnostic.FileName;
+                    diag.Range = new Yarn.Range
+                    {
+                        Start =
+                        {
+                            Line = diagnostic.Range.Start.Line,
+                            Character = diagnostic.Range.Start.Character,
+                        },
+                        End =
+                        {
+                            Line = diagnostic.Range.End.Line,
+                            Character = diagnostic.Range.End.Character,
+                        },
+                    };
+                    diag.Severity = (Yarn.Diagnostic.Types.Severity)diagnostic.Severity;
+                    compilerOutput.Diagnostics.Add(diag);
+                }
+
+                string jsonOutput = JsonSerializer.Serialize(compilerOutput);
+                File.WriteAllText(programOutputPath, jsonOutput);
+            }
+            else
+            {
+                using (var outStream = new FileStream(programOutputPath, FileMode.Create))
+                using (var codedStream = new Google.Protobuf.CodedOutputStream(outStream))
+                {
+                    compiledResults.Program.WriteTo(codedStream);
+                }
             }
 
             Log.Info($"Wrote {programOutputPath}");
