@@ -58,9 +58,13 @@
 
                 var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
                 compileCommand.AddOption(stdoutOption);
+
+                var jsonOption = new Option<bool>("-j", "Output compilation result to json instead of binary");
+                jsonOption.AddAlias("--json");
+                compileCommand.AddOption(jsonOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool, bool>(CompileCommand.CompileFiles);
 
             var listSourcesCommand = new System.CommandLine.Command("list-sources", "Lists Yarn sources for a Yarn project.");
             {
