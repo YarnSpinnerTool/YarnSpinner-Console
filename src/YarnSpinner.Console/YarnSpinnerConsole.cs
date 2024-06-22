@@ -286,8 +286,8 @@
                 .WithName("visited")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.BuiltinTypes.String)
-                        .WithReturnType(Yarn.BuiltinTypes.Boolean)
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Boolean)
                         .FunctionType)
                 .Declaration;
 
@@ -295,8 +295,8 @@
                 .WithName("visited_count")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.BuiltinTypes.String)
-                        .WithReturnType(Yarn.BuiltinTypes.Number)
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Number)
                         .FunctionType)
                 .Declaration;
 

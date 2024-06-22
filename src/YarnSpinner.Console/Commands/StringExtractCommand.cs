@@ -56,7 +56,7 @@ namespace YarnSpinnerConsole
                 location = output.FullName;
             }
 
-            var lineBlocks = Yarn.Compiler.Utility.ExtractStringBlocks(compiledResults.Program.Nodes.Values);
+            var lineBlocks = Yarn.Compiler.Utility.ExtractStringBlocks(compiledResults.Program.Nodes.Values, compiledResults.ProjectDebugInfo);
             var stringTable = compiledResults.StringTable;
 
             bool includeCharacters = true;
