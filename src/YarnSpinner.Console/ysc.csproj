@@ -7,7 +7,9 @@
     <UseAppHost>true</UseAppHost>
     <PublishSelfContained>true</PublishSelfContained>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <YarnSpinnerDevelopmentPath>../../../../YarnSpinner</YarnSpinnerDevelopmentPath>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ysc</ToolCommandName>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
