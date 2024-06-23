@@ -105,10 +105,7 @@ namespace YarnSpinnerConsole
                     csv.WriteField(pair.Key);
                     csv.WriteField(pair.Value.nodeName);
                     csv.WriteField(pair.Value.lineNumber);
-                    foreach (var record in metadata)
-                    {
-                        csv.WriteField(record);
-                    }
+                    csv.WriteField(string.Join(" ", pair.Value.metadata));
 
                     csv.NextRecord();
                 }
