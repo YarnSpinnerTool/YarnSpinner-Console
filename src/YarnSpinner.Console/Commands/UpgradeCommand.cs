@@ -55,8 +55,11 @@ namespace YarnSpinnerConsole
 
             Log.Info("Upgrade complete, compiling to determine if any errors have occurred as result of upgrade");
 
-            // finally we do a compile of the files *just* in-case
-            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
+            // Finally, we do a compile of the files *just* in-case. Preview
+            // features are disabled, because if we're upgrading from a previous
+            // version of the language, then the code is not expected to be
+            // using any upcoming features.
+            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs, false);
             foreach (var diagnostic in compiledResults.Diagnostics)
             {
                 Log.Diagnostic(diagnostic);

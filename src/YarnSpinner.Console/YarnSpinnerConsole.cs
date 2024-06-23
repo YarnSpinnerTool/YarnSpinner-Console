@@ -58,9 +58,14 @@
 
                 var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
                 compileCommand.AddOption(stdoutOption);
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                compileCommand.AddOption(allowPreviewFeaturesOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool, bool>(CompileCommand.CompileFiles);
 
             var listSourcesCommand = new System.CommandLine.Command("list-sources", "Lists Yarn sources for a Yarn project.");
             {
@@ -89,9 +94,14 @@
                 var autoAdvance = new Option<bool>("--auto-advance", "Auto-advance regular dialogue lines");
                 autoAdvance.AddAlias("-a");
                 runCommand.AddOption(autoAdvance);
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                runCommand.AddOption(allowPreviewFeaturesOption);
             }
 
-            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool>(RunCommand.RunFiles);
+            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool, bool>(RunCommand.RunFiles);
 
             var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
             {
@@ -274,12 +284,13 @@
 
         // Compiles a given Yarn story. Designed to be called by runners or the
         // generic compile command. Does no writing.
-        public static CompilationResult CompileProgram(FileInfo[] inputs)
+        public static CompilationResult CompileProgram(FileInfo[] inputs, bool allowPreviewFeatures)
         {
             // Given the list of files that we've received, figure out which Yarn files to compile. (If we were given a Yarn Project, this method will figure out which source files to use.)
             inputs = CompileCommand.GetYarnFiles(inputs);
 
             var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
+            compilationJob.AllowPreviewFeatures = allowPreviewFeatures;
 
             // Declare the existence of 'visited' and 'visited_count'
             var visitedDecl = new DeclarationBuilder()

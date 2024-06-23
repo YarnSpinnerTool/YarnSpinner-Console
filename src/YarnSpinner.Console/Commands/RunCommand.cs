@@ -7,11 +7,11 @@ namespace YarnSpinnerConsole
 
     public static class RunCommand
     {
-        public static void RunFiles(FileInfo[] inputs, string startNode, bool autoAdvance)
+        public static void RunFiles(FileInfo[] inputs, string startNode, bool autoAdvance, bool allowPreviewFeatures)
         {
             // this will be a new interactive command for running yarn
             // stories will compile and then run them
-            var results = YarnSpinnerConsole.CompileProgram(inputs);
+            var results = YarnSpinnerConsole.CompileProgram(inputs, allowPreviewFeatures);
 
             if (results.Diagnostics.Any(d => d.Severity == Yarn.Compiler.Diagnostic.DiagnosticSeverity.Error))
             {
