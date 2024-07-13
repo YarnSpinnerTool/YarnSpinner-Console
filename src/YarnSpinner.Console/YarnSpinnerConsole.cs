@@ -286,11 +286,12 @@
         // generic compile command. Does no writing.
         public static CompilationResult CompileProgram(FileInfo[] inputs, bool allowPreviewFeatures)
         {
-            // Given the list of files that we've received, figure out which Yarn files to compile. (If we were given a Yarn Project, this method will figure out which source files to use.)
-            inputs = CompileCommand.GetYarnFiles(inputs);
+            // Given the list of files that we've received, figure out which
+            // Yarn files to compile. (If we were given a Yarn Project, this
+            // method will figure out which source files to use.)
+            var compilationJob = CompileCommand.GetCompilationJob(inputs);
 
-            var compilationJob = CompilationJob.CreateFromFiles(inputs.Select(fileInfo => fileInfo.FullName));
-            compilationJob.AllowPreviewFeatures = allowPreviewFeatures;
+            compilationJob.AllowPreviewFeatures |= allowPreviewFeatures;
 
             // Declare the existence of 'visited' and 'visited_count'
             var visitedDecl = new DeclarationBuilder()

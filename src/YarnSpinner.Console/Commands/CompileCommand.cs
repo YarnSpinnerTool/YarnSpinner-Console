@@ -114,7 +114,7 @@ namespace YarnSpinnerConsole
             }
         }
 
-        public static FileInfo[] GetYarnFiles(FileInfo[] inputs) {
+        public static CompilationJob GetCompilationJob(FileInfo[] inputs) {
             var anyFileIsProject = inputs.Any(i => i.Extension == ".yarnproject");
 
             if (anyFileIsProject)
@@ -125,11 +125,53 @@ namespace YarnSpinnerConsole
                 }
 
                 var project = Project.LoadFromFile(inputs.First().FullName);
-                return project.SourceFiles.Select(f => new FileInfo(f)).ToArray();
+
+                var job = CompilationJob.CreateFromFiles(project.SourceFiles);
+
+                if (project.DefinitionsPath != null)
+                {
+                    var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(project.DefinitionsPath));
+
+                    if (doc.RootElement.TryGetProperty("Functions", out var functionsArray) && functionsArray.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        static Yarn.IType GetType(string typeName) => typeName.ToLowerInvariant() switch
+                        {
+                            "string" => Yarn.Types.String,
+                            "any" => Yarn.Types.Any,
+                            "number" => Yarn.Types.Number,
+                            "bool" => Yarn.Types.Boolean,
+
+                            var other => throw new System.ArgumentOutOfRangeException("Invalid type " + other),
+                        };
+
+                        foreach (var function in functionsArray.EnumerateArray())
+                        {
+                            var typeBuilder = new FunctionTypeBuilder();
+
+                            typeBuilder = typeBuilder.WithReturnType(GetType(function.GetProperty("ReturnType").GetString()));
+
+                            foreach (var parameter in function.GetProperty("Parameters").EnumerateArray())
+                            {
+                                typeBuilder = typeBuilder.WithParameter(GetType(parameter.GetProperty("Type").GetString()));
+                            }
+
+                            var decl = new DeclarationBuilder()
+                                .WithName(function.GetProperty("YarnName").GetString())
+                                .WithType(typeBuilder.FunctionType)
+                                .WithDescription(function.GetProperty("Documentation").GetString())
+                                .Declaration;
+
+                            job.VariableDeclarations = job.VariableDeclarations.Append(decl);
+                        }
+                    }
+                }
+
+                return job;
             }
             else
             {
-                return inputs;
+                var job = CompilationJob.CreateFromFiles(inputs.Select(i => i.FullName));
+                return job;
             }
         }
 

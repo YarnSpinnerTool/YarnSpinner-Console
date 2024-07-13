@@ -10,11 +10,11 @@ namespace YarnSpinnerConsole
     {
         public static void TagFiles(FileInfo[] inputs, DirectoryInfo outputDirectory)
         {
-            inputs = CompileCommand.GetYarnFiles(inputs);
-            
             HashSet<string> excludedFiles = new HashSet<string>();
             var tags = new List<string>();
-            foreach (var inputFile in inputs)
+
+            var job = CompileCommand.GetCompilationJob(inputs);
+            foreach (var inputFile in job.Files.Select(file => new FileInfo(file.FileName)))
             {
                 var compilationJob = CompilationJob.CreateFromFiles(inputFile.FullName);
                 compilationJob.CompilationType = CompilationJob.Type.StringsOnly;
