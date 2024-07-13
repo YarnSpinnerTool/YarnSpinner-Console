@@ -8,8 +8,14 @@ namespace YarnSpinnerConsole
 
     public static class DumpCompiledCodeCommand
     {
-        public static void DumpCompiledCode(FileInfo[] input, bool allowPreviewFeatures) {
-            var compiledResults = YarnSpinnerConsole.CompileProgram(input, allowPreviewFeatures);
+        public static void DumpCompiledCode(FileInfo[] inputs, bool allowPreviewFeatures)
+        {
+            if (inputs == null)
+            {
+                throw new ArgumentNullException(nameof(inputs));
+            }
+
+            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs, allowPreviewFeatures);
 
             System.Func<string, string> stringLookupHelper = (input) =>
             {

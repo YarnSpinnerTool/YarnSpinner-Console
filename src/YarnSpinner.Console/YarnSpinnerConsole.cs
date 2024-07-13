@@ -256,6 +256,19 @@
             }
             createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string, bool>(CreateProjectFileCommand.CreateProjFile);
 
+            var dumpCodeCommand = new Command("dump-code", "Compiles the specified input, and prints the disassembled code.");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to compile, or a collection of .yarn files to compile.");
+                inputsArgument.Arity = ArgumentArity.OneOrMore;
+                dumpCodeCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                dumpCodeCommand.AddOption(allowPreviewFeaturesOption);
+            }
+            dumpCodeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], bool>(DumpCompiledCodeCommand.DumpCompiledCode);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -265,13 +278,13 @@
                 upgradeCommand,
                 dumpTreeCommand,
                 dumpTokensCommand,
+                dumpCodeCommand,
                 tagCommand,
                 extractCommand,
                 graphCommand,
                 browsebinaryCommand,
                 createProjectFileCommand,
-                versionCommand,
-            };
+                versionCommand,            };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
 
