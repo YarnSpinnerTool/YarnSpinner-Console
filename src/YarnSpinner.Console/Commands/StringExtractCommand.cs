@@ -11,7 +11,7 @@ namespace YarnSpinnerConsole
     {
         public static void ExtractStrings(FileInfo[] inputs, string format, string[] columns, FileInfo output, string defaultName = null)
         {
-            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs, true);
+            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
             foreach (var diagnostic in compiledResults.Diagnostics)
             {

@@ -1,4 +1,4 @@
-namespace YarnSpinnerConsole
+﻿namespace YarnSpinnerConsole
 {
     using System;
     using System.CommandLine;
@@ -58,14 +58,9 @@ namespace YarnSpinnerConsole
 
                 var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
                 compileCommand.AddOption(stdoutOption);
-
-                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
-                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
-                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
-                compileCommand.AddOption(allowPreviewFeaturesOption);
             }
 
-            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool, bool>(CompileCommand.CompileFiles);
+            compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
 
             var listSourcesCommand = new System.CommandLine.Command("list-sources", "Lists Yarn sources for a Yarn project.");
             {
@@ -94,14 +89,9 @@ namespace YarnSpinnerConsole
                 var autoAdvance = new Option<bool>("--auto-advance", "Auto-advance regular dialogue lines");
                 autoAdvance.AddAlias("-a");
                 runCommand.AddOption(autoAdvance);
-
-                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
-                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
-                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
-                runCommand.AddOption(allowPreviewFeaturesOption);
             }
 
-            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool, bool>(RunCommand.RunFiles);
+            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool>(RunCommand.RunFiles);
 
             var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
             {
