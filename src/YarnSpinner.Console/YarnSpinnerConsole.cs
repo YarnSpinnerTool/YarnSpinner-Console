@@ -1,4 +1,4 @@
-﻿namespace YarnSpinnerConsole
+namespace YarnSpinnerConsole
 {
     using System;
     using System.CommandLine;
@@ -256,19 +256,6 @@
             }
             createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string, bool>(CreateProjectFileCommand.CreateProjFile);
 
-            var dumpCodeCommand = new Command("dump-code", "Compiles the specified input, and prints the disassembled code.");
-            {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to compile, or a collection of .yarn files to compile.");
-                inputsArgument.Arity = ArgumentArity.OneOrMore;
-                dumpCodeCommand.AddArgument(inputsArgument.ExistingOnly());
-
-                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
-                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
-                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
-                dumpCodeCommand.AddOption(allowPreviewFeaturesOption);
-            }
-            dumpCodeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], bool>(DumpCompiledCodeCommand.DumpCompiledCode);
-
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -278,7 +265,6 @@
                 upgradeCommand,
                 dumpTreeCommand,
                 dumpTokensCommand,
-                dumpCodeCommand,
                 tagCommand,
                 extractCommand,
                 graphCommand,
@@ -304,15 +290,13 @@
             // method will figure out which source files to use.)
             var compilationJob = CompileCommand.GetCompilationJob(inputs);
 
-            compilationJob.AllowPreviewFeatures |= allowPreviewFeatures;
-
             // Declare the existence of 'visited' and 'visited_count'
             var visitedDecl = new DeclarationBuilder()
                 .WithName("visited")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.Types.String)
-                        .WithReturnType(Yarn.Types.Boolean)
+                        .WithParameter(Yarn.BuiltinTypes.String)
+                        .WithReturnType(Yarn.BuiltinTypes.Boolean)
                         .FunctionType)
                 .Declaration;
 
@@ -320,8 +304,8 @@
                 .WithName("visited_count")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.Types.String)
-                        .WithReturnType(Yarn.Types.Number)
+                        .WithParameter(Yarn.BuiltinTypes.String)
+                        .WithReturnType(Yarn.BuiltinTypes.Number)
                         .FunctionType)
                 .Declaration;
 

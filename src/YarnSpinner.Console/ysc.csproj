@@ -24,10 +24,10 @@
 
   <!-- If Yarn Spinner doesn't exist at YarnSpinnerDevelopmentPath, then pull
     the most recent version from NuGet. -->
-    <ItemGroup Condition="!Exists('$(YarnSpinnerDevelopmentPath)')">
-        <PackageReference Include="YarnSpinner" Version="2.4.2" />
-        <PackageReference Include="YarnSpinner.Compiler" Version="2.4.2" />
-    </ItemGroup>
+  <ItemGroup Condition="!Exists('$(YarnSpinnerDevelopmentPath)')">
+    <PackageReference Include="YarnSpinner" Version="2.5.0" />
+    <PackageReference Include="YarnSpinner.Compiler" Version="2.5.0" />
+  </ItemGroup>
 
     <!-- If Yarn Spinner DOES exist at YarnSpinnerDevelopmentPath, use that. -->
     <ItemGroup Condition="Exists('$(YarnSpinnerDevelopmentPath)')">

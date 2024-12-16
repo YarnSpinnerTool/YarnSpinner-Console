@@ -136,10 +136,10 @@ namespace YarnSpinnerConsole
                     {
                         static Yarn.IType GetType(string typeName) => typeName.ToLowerInvariant() switch
                         {
-                            "string" => Yarn.Types.String,
-                            "any" => Yarn.Types.Any,
-                            "number" => Yarn.Types.Number,
-                            "bool" => Yarn.Types.Boolean,
+                            "string" => Yarn.BuiltinTypes.String,
+                            "any" => Yarn.BuiltinTypes.Any,
+                            "number" => Yarn.BuiltinTypes.Number,
+                            "bool" => Yarn.BuiltinTypes.Boolean,
 
                             var other => throw new System.ArgumentOutOfRangeException("Invalid type " + other),
                         };
