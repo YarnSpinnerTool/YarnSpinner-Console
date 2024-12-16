@@ -283,7 +283,7 @@ namespace YarnSpinnerConsole
 
         // Compiles a given Yarn story. Designed to be called by runners or the
         // generic compile command. Does no writing.
-        public static CompilationResult CompileProgram(FileInfo[] inputs, bool allowPreviewFeatures)
+        public static CompilationResult CompileProgram(FileInfo[] inputs)
         {
             // Given the list of files that we've received, figure out which
             // Yarn files to compile. (If we were given a Yarn Project, this
