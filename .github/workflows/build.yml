@@ -2,75 +2,74 @@ name: Build Yarn Spinner
 
 on:
   push:
-    branches: '*'
-    tags: '*'
+    branches: "*"
+    tags: "*"
   pull_request:
-    branches: '*'
+    branches: "*"
   workflow_dispatch:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
 
-    - name: Fetch all commits
-      run: git fetch --unshallow
+      - name: Fetch all commits
+        run: git fetch --unshallow
 
-    - uses: gittools/actions/gitversion/setup@v0.9.10
-      name: Install GitVersion
-      with:
-          versionSpec: '5.x'
+      - uses: gittools/actions/gitversion/setup@v0.9.10
+        name: Install GitVersion
+        with:
+          versionSpec: "5.x"
 
-    - uses: gittools/actions/gitversion/execute@v0.9.10
-      name: Execute GitVersion
-      id: gitversion # step id used as reference for output values
-      with:
-        updateAssemblyInfo: true
-      
-    - name: Print version information
-      run: |
-        echo "Major: ${{ steps.gitversion.outputs.major }}"
-        echo "Minor: ${{ steps.gitversion.outputs.minor }}"
-        echo "Patch: ${{ steps.gitversion.outputs.patch }}"
-        echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-        echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+      - uses: gittools/actions/gitversion/execute@v0.9.10
+        name: Execute GitVersion
+        id: gitversion # step id used as reference for output values
+        with:
+          updateAssemblyInfo: true
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Print version information
+        run: |
+          echo "Major: ${{ steps.gitversion.outputs.major }}"
+          echo "Minor: ${{ steps.gitversion.outputs.minor }}"
+          echo "Patch: ${{ steps.gitversion.outputs.patch }}"
+          echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
 
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal
-    
-    - name: Package for Windows
-      run: dotnet publish -r win-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
-    
-    - uses: actions/upload-artifact@v4
-      name: Upload Windows build
-      with:
-        name: ysc-win
-        path: src/YarnSpinner.Console/bin/Release/netcoreapp6.0/win-x64/publish/ysc.exe
-    
-    - name: Package for macOS
-      run: |
-        dotnet publish -r osx-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
-        tar -cvf ysc-osx.tar --directory=src/YarnSpinner.Console/bin/Release/netcoreapp6.0/osx-x64/publish/ .
-      
-    - uses: actions/upload-artifact@v4
-      name: Upload macOS build
-      with:
-        name: ysc-osx
-        path: ysc-osx.tar
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+      - name: Package for Windows
+        run: dotnet publish -r win-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
+
+      - uses: actions/upload-artifact@v4
+        name: Upload Windows build
+        with:
+          name: ysc-win
+          path: src/YarnSpinner.Console/bin/Release/netcoreapp6.0/win-x64/publish/ysc.exe
+
+      - name: Package for macOS
+        run: |
+          dotnet publish -r osx-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
+          tar -cvf ysc-osx.tar --directory=src/YarnSpinner.Console/bin/Release/netcoreapp6.0/osx-x64/publish/ .
+
+      - uses: actions/upload-artifact@v4
+        name: Upload macOS build
+        with:
+          name: ysc-osx
+          path: ysc-osx.tar
 
     outputs:
       builtVersion: ${{ steps.gitversion.outputs.fullSemVer }}-${{ steps.gitversion.outputs.shortSha }}
@@ -81,60 +80,60 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - uses: actions/checkout@v2
-      
-    - uses: actions/download-artifact@v2
-      name: Download artifacts
+      - uses: actions/checkout@v2
 
-    - name: Extract release notes
-      id: extract-release-notes
-      uses: ffurrer2/extract-release-notes@v1
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
 
-    - name: Read release notes preface
-      id: release_preface
-      uses: bluwy/substitute-string-action@v1
-      with:
-        _input-file: .github/RELEASE_TEMPLATE.md
-        _format-key: '{key}'
-        RELEASE_TAG: ${{ github.ref_name }}
-    - name: Create release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ needs.build.outputs.builtVersion }}
-        draft: true
-        prerelease: true
-        body: |
-          ${{ steps.release_preface.outputs.result }}
-          ${{ steps.extract-release-notes.outputs.release_notes }}
+      - name: Extract release notes
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@v1
 
-    - name: Package Windows build
-      run: |
-        zip --junk-paths ysc-win.zip ysc-win/ysc.exe
+      - name: Read release notes preface
+        id: release_preface
+        uses: bluwy/substitute-string-action@v1
+        with:
+          _input-file: .github/RELEASE_TEMPLATE.md
+          _format-key: "{key}"
+          RELEASE_TAG: ${{ github.ref_name }}
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ needs.build.outputs.builtVersion }}
+          draft: true
+          prerelease: true
+          body: |
+            ${{ steps.release_preface.outputs.result }}
+            ${{ steps.extract-release-notes.outputs.release_notes }}
 
-    - name: Upload Windows Build
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./ysc-win.zip
-        asset_name: ysc-win-${{ needs.build.outputs.builtVersion }}.zip
-        asset_content_type: application/zip
-    
-    - name: Package macOS build
-      run: |
-        gzip ysc-osx/ysc-osx.tar
+      - name: Package Windows build
+        run: |
+          zip --junk-paths ysc-win.zip ysc-win/ysc.exe
 
-    - name: Upload macOS Build
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./ysc-osx/ysc-osx.tar.gz
-        asset_name: ysc-osx-${{ needs.build.outputs.builtVersion }}.tar.gz
-        asset_content_type: application/gzip
+      - name: Upload Windows Build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ysc-win.zip
+          asset_name: ysc-win-${{ needs.build.outputs.builtVersion }}.zip
+          asset_content_type: application/zip
+
+      - name: Package macOS build
+        run: |
+          gzip ysc-osx/ysc-osx.tar
+
+      - name: Upload macOS Build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ysc-osx/ysc-osx.tar.gz
+          asset_name: ysc-osx-${{ needs.build.outputs.builtVersion }}.tar.gz
+          asset_content_type: application/gzip
