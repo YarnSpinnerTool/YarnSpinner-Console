@@ -114,7 +114,8 @@ namespace YarnSpinnerConsole
             }
         }
 
-        public static CompilationJob GetCompilationJob(FileInfo[] inputs) {
+        public static CompilationJob GetCompilationJob(FileInfo[] inputs)
+        {
             var anyFileIsProject = inputs.Any(i => i.Extension == ".yarnproject");
 
             if (anyFileIsProject)
