@@ -58,6 +58,11 @@
 
                 var stdoutOption = new Option<bool>("--stdout", "Output machine-readable compilation result to stdout instead of to files");
                 compileCommand.AddOption(stdoutOption);
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                compileCommand.AddOption(allowPreviewFeaturesOption);
             }
 
             compileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], DirectoryInfo, string, string, string, bool>(CompileCommand.CompileFiles);
@@ -89,28 +94,14 @@
                 var autoAdvance = new Option<bool>("--auto-advance", "Auto-advance regular dialogue lines");
                 autoAdvance.AddAlias("-a");
                 runCommand.AddOption(autoAdvance);
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                runCommand.AddOption(allowPreviewFeaturesOption);
             }
 
-            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool>(RunCommand.RunFiles);
-
-            var upgradeCommand = new System.CommandLine.Command("upgrade", "Upgrades Yarn scripts from one version of the language to another. Files will be modified in-place.");
-            {
-                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to upgrade the files of, or a collection of .yarn files to upgrade.")
-                {
-                    Arity = ArgumentArity.OneOrMore,
-                };
-
-                upgradeCommand.AddArgument(inputsArgument.ExistingOnly());
-
-                var upgradeTypeOption = new Option<int>("-t", "Upgrade type");
-                upgradeTypeOption.AddAlias("--upgrade-type");
-                upgradeTypeOption.Argument.SetDefaultValue(1);
-                upgradeTypeOption.FromAmong("1");
-                upgradeTypeOption.Argument.Arity = ArgumentArity.ExactlyOne;
-                upgradeCommand.AddOption(upgradeTypeOption);
-            }
-
-            upgradeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], Yarn.Compiler.Upgrader.UpgradeType>(UpgradeCommand.UpgradeFiles);
+            runCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], string, bool, bool>(RunCommand.RunFiles);
 
             var dumpTreeCommand = new System.CommandLine.Command("print-tree", "Parses a Yarn script and produces a human-readable syntax tree.");
             {
@@ -246,21 +237,35 @@
             }
             createProjectFileCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<string, bool>(CreateProjectFileCommand.CreateProjFile);
 
+            var dumpCodeCommand = new Command("dump-code", "Compiles the specified input, and prints the disassembled code.");
+            {
+                Argument<FileInfo[]> inputsArgument = new Argument<FileInfo[]>("inputs", "The .yarnproject file to compile, or a collection of .yarn files to compile.");
+                inputsArgument.Arity = ArgumentArity.OneOrMore;
+                dumpCodeCommand.AddArgument(inputsArgument.ExistingOnly());
+
+                var allowPreviewFeaturesOption = new Option<bool>("-p", "Allow using in-development compiler features.");
+                allowPreviewFeaturesOption.AddAlias("--allow-preview-features");
+                allowPreviewFeaturesOption.Argument.SetDefaultValue(false);
+                dumpCodeCommand.AddOption(allowPreviewFeaturesOption);
+            }
+            dumpCodeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], bool>(DumpCompiledCodeCommand.DumpCompiledCode);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
                 runCommand,
                 compileCommand,
                 listSourcesCommand,
-                upgradeCommand,
                 dumpTreeCommand,
                 dumpTokensCommand,
+                dumpCodeCommand,
                 tagCommand,
                 extractCommand,
                 graphCommand,
                 browsebinaryCommand,
                 createProjectFileCommand,
-                versionCommand,            };
+                versionCommand,
+            };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";
 
@@ -285,8 +290,8 @@
                 .WithName("visited")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.BuiltinTypes.String)
-                        .WithReturnType(Yarn.BuiltinTypes.Boolean)
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Boolean)
                         .FunctionType)
                 .Declaration;
 
@@ -294,8 +299,8 @@
                 .WithName("visited_count")
                 .WithType(
                     new FunctionTypeBuilder()
-                        .WithParameter(Yarn.BuiltinTypes.String)
-                        .WithReturnType(Yarn.BuiltinTypes.Number)
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Number)
                         .FunctionType)
                 .Declaration;
 

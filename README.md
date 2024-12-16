@@ -64,16 +64,6 @@ Lists all of the yarn files that are associated with the `input.yarnproject` Yar
 This reads both the includes and excludes of the Yarn Project and will work out what files match those filters.
 You can use this to make sure you have set your globstar values correctly.
 
-## Upgrading Scripts
-
-```bash
-$ ysc upgrade [--upgrade-type <1>] <input1.yarn> <input2.yarn> ...
-```
-
-`ysc` will upgrade the `yarn` files from one version of Yarn to another.
-By specifying the `--upgrade-type` option you can configure from what version, to which version, of Yarn to convert.
-Defaults to `1`, or upgrading a yarn v1 file to a yarn v2 file.
-
 ## Printing the Syntax Tree
 
 ```bash

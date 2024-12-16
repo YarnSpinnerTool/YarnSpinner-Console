@@ -8,7 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Added a new command, `dump-code`, which compiles Yarn files or a Yarn Project and outputs a human-readable version of the compiled bytecode to stdout. This is intended for developers who are working on tools that consume compiled Yarn files.
+
 ### Changed
+
+- The `--allow-preview-features` (`-p`) flag can now be used when compiling scripts to enable preview features.
+- .ysls.json files referenced by Yarn Project files are now parsed and used when compiling Yarn code.
 
 ### Removed
 

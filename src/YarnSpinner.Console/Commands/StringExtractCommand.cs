@@ -56,7 +56,7 @@ namespace YarnSpinnerConsole
                 location = output.FullName;
             }
 
-            var lineBlocks = Yarn.Compiler.Utility.ExtractStringBlocks(compiledResults.Program.Nodes.Values);
+            var lineBlocks = Yarn.Compiler.Utility.ExtractStringBlocks(compiledResults.Program.Nodes.Values, compiledResults.ProjectDebugInfo);
             var stringTable = compiledResults.StringTable;
 
             bool includeCharacters = true;
@@ -143,7 +143,7 @@ namespace YarnSpinnerConsole
         public void Format(HashSet<string> characters);
         public void WriteFile(string location);
     }
-    public class CSVStringWriter: StringWriter
+    public class CSVStringWriter : StringWriter
     {
         private string[] columns;
         private StreamWriter stream;
@@ -191,7 +191,7 @@ namespace YarnSpinnerConsole
         }
     }
 
-    public class ExcelStringWriter: StringWriter
+    public class ExcelStringWriter : StringWriter
     {
         private int rowIndex = 1;
         private int columnIndex = 1;
@@ -212,7 +212,7 @@ namespace YarnSpinnerConsole
                 sheet.Cell(rowIndex, j + 1).Value = columns[j];
             }
 
-            sheet.Row(rowIndex).Style.Font.Bold = true; 
+            sheet.Row(rowIndex).Style.Font.Bold = true;
             sheet.Row(rowIndex).Style.Fill.BackgroundColor = XLColor.DarkGray;
             sheet.Row(rowIndex).Style.Font.FontColor = XLColor.White;
             sheet.SheetView.FreezeRows(1);

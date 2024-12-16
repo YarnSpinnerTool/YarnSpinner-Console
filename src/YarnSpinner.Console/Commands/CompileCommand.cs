@@ -114,7 +114,7 @@ namespace YarnSpinnerConsole
             }
         }
 
-        public static CompilationJob GetCompilationJob(FileInfo[] inputs)
+        public static CompilationJob GetCompilationJob(FileInfo[] inputs, int languageVersion = Yarn.Compiler.Project.CurrentProjectFileVersion)
         {
             var anyFileIsProject = inputs.Any(i => i.Extension == ".yarnproject");
 
@@ -137,10 +137,10 @@ namespace YarnSpinnerConsole
                     {
                         static Yarn.IType GetType(string typeName) => typeName.ToLowerInvariant() switch
                         {
-                            "string" => Yarn.BuiltinTypes.String,
-                            "any" => Yarn.BuiltinTypes.Any,
-                            "number" => Yarn.BuiltinTypes.Number,
-                            "bool" => Yarn.BuiltinTypes.Boolean,
+                            "string" => Yarn.Types.String,
+                            "any" => Yarn.Types.Any,
+                            "number" => Yarn.Types.Number,
+                            "bool" => Yarn.Types.Boolean,
 
                             var other => throw new System.ArgumentOutOfRangeException("Invalid type " + other),
                         };
@@ -172,6 +172,7 @@ namespace YarnSpinnerConsole
             else
             {
                 var job = CompilationJob.CreateFromFiles(inputs.Select(i => i.FullName));
+                job.LanguageVersion = languageVersion;
                 return job;
             }
         }
@@ -183,14 +184,16 @@ namespace YarnSpinnerConsole
             var compilerOutput = new Yarn.CompilerOutput();
             compilerOutput.Program = program;
 
-            foreach (var entry in compiledResults.StringTable) {
+            foreach (var entry in compiledResults.StringTable)
+            {
                 var tableEntry = new Yarn.StringInfo();
                 tableEntry.Text = entry.Value.text;
 
                 compilerOutput.Strings.Add(entry.Key, tableEntry);
             }
 
-            foreach (var diagnostic in compiledResults.Diagnostics) {
+            foreach (var diagnostic in compiledResults.Diagnostics)
+            {
                 var diag = new Yarn.Diagnostic();
                 diag.Message = diagnostic.Message;
                 diag.FileName = diagnostic.FileName;
