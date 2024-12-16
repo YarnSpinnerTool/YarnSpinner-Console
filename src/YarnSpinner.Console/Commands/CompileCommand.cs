@@ -6,9 +6,9 @@ namespace YarnSpinnerConsole
 
     public static class CompileCommand
     {
-        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName, bool stdout, bool allowPreviewFeatures)
+        public static void CompileFiles(FileInfo[] inputs, DirectoryInfo outputDirectory, string outputName, string outputStringTableName, string outputMetadataTableName, bool stdout)
         {
-            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs, allowPreviewFeatures);
+            var compiledResults = YarnSpinnerConsole.CompileProgram(inputs);
 
             foreach (var diagnostic in compiledResults.Diagnostics)
             {

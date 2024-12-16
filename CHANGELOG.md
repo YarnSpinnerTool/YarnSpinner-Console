@@ -8,15 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Added a new command, `dump-code`, which compiles Yarn files or a Yarn Project and outputs a human-readable version of the compiled bytecode to stdout. This is intended for developers who are working on tools that consume compiled Yarn files.
+### Changed
+
+### Removed
+
+## [2.5.0] 2024-12-16
 
 ### Changed
 
 - The metadata CSV file now stores its metadata in the same way as Yarn Spinner for Unity's export feature, with a single `metadata` column that contains a space-separated list of tags.
-- The `--allow-preview-features` (`-p`) flag can now be used when compiling scripts to enable preview features.
-- .ysls.json files referenced by Yarn Project files are now parsed and used when compiling Yarn code.
-
-### Removed
 
 ## [2.4.2] 2024-02-15
 
