@@ -55,7 +55,7 @@ jobs:
     - name: Package for Windows
       run: dotnet publish -r win-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
     
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       name: Upload Windows build
       with:
         name: ysc-win
@@ -66,7 +66,7 @@ jobs:
         dotnet publish -r osx-x64 -c Release --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True
         tar -cvf ysc-osx.tar --directory=src/YarnSpinner.Console/bin/Release/netcoreapp6.0/osx-x64/publish/ .
       
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       name: Upload macOS build
       with:
         name: ysc-osx
