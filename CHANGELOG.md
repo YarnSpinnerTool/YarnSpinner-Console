@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+### Changed
+
+### Removed
+
+## [3.0.0-beta2] 2025-03-05
+
+### Added
+
 - Added a new command, `dump-code`, which compiles Yarn files or a Yarn Project and outputs a human-readable version of the compiled bytecode to stdout. This is intended for developers who are working on tools that consume compiled Yarn files.
 
 ### Changed
