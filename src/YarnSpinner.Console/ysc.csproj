@@ -25,15 +25,16 @@
 
   <!-- If Yarn Spinner doesn't exist at YarnSpinnerDevelopmentPath, then pull
     the most recent version from NuGet. -->
-    <ItemGroup Condition="!Exists('$(YarnSpinnerDevelopmentPath)')">
-        <PackageReference Include="YarnSpinner" Version="3.0.0-beta.1" />
-        <PackageReference Include="YarnSpinner.Compiler" Version="3.0.0-beta.1" />
-    </ItemGroup>
+  <ItemGroup Condition="!Exists('$(YarnSpinnerDevelopmentPath)')">
+    <PackageReference Include="YarnSpinner" Version="3.0.0-beta2" />
+    <PackageReference Include="YarnSpinner.Compiler" Version="3.0.0-beta2" />
+  </ItemGroup>
 
-    <!-- If Yarn Spinner DOES exist at YarnSpinnerDevelopmentPath, use that. -->
-    <ItemGroup Condition="Exists('$(YarnSpinnerDevelopmentPath)')">
-        <ProjectReference Include="$(YarnSpinnerDevelopmentPath)/YarnSpinner/YarnSpinner.csproj" />
-        <ProjectReference Include="$(YarnSpinnerDevelopmentPath)/YarnSpinner.Compiler/YarnSpinner.Compiler.csproj" />
-    </ItemGroup>
+  <!-- If Yarn Spinner DOES exist at YarnSpinnerDevelopmentPath, use that. -->
+  <ItemGroup Condition="Exists('$(YarnSpinnerDevelopmentPath)')">
+    <ProjectReference Include="$(YarnSpinnerDevelopmentPath)/YarnSpinner/YarnSpinner.csproj" />
+    <ProjectReference
+      Include="$(YarnSpinnerDevelopmentPath)/YarnSpinner.Compiler/YarnSpinner.Compiler.csproj" />
+  </ItemGroup>
 
 </Project>
