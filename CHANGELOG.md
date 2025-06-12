@@ -12,6 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+## [3.0.2] 2025-06-12
+
+### Changed
+
+- Updated to Yarn Spinner 3.0.2.
+
 ## [3.0.0] 2025-05-16
 
 ### Changed
