@@ -129,6 +129,8 @@ namespace YarnSpinnerConsole
 
                 var job = CompilationJob.CreateFromFiles(project.SourceFiles);
 
+                job.LanguageVersion = project.FileVersion;
+
                 if (project.DefinitionsPath != null)
                 {
                     var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(project.DefinitionsPath));
