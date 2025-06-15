@@ -285,7 +285,7 @@
             // method will figure out which source files to use.)
             var compilationJob = CompileCommand.GetCompilationJob(inputs);
 
-            // Declare the existence of 'visited' and 'visited_count'
+            // Declare the existence of functions that are not part of the static StandardLibrary but are declared in Dialogue
             var visitedDecl = new DeclarationBuilder()
                 .WithName("visited")
                 .WithType(
@@ -304,9 +304,19 @@
                         .FunctionType)
                 .Declaration;
 
-            compilationJob.VariableDeclarations = (compilationJob.VariableDeclarations ?? Array.Empty<Declaration>()).Concat(new[] {
+            var hasAnyContent = new DeclarationBuilder()
+                .WithName("has_any_content")
+                .WithType(
+                    new FunctionTypeBuilder()
+                        .WithParameter(Yarn.Types.String)
+                        .WithReturnType(Yarn.Types.Boolean)
+                        .FunctionType)
+                        .Declaration;
+
+            compilationJob.Declarations = (compilationJob.Declarations ?? Array.Empty<Declaration>()).Concat(new[] {
                 visitedDecl,
                 visitedCountDecl,
+                hasAnyContent,
             });
 
             CompilationResult compilationResult;
