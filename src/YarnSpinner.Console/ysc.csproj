@@ -7,10 +7,22 @@
     <UseAppHost>true</UseAppHost>
     <PublishSelfContained>true</PublishSelfContained>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PackageId>YarnSpinner.Console</PackageId>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ysc</ToolCommandName>
     <PackageOutputPath>../../nupkg</PackageOutputPath>
     <!-- <YarnSpinnerDevelopmentPath>../../../YarnSpinner</YarnSpinnerDevelopmentPath> -->
+
+    <Authors>Secret Lab Pty. Ltd. and Yarn Spinner contributors</Authors>
+    <PackageDescription><![CDATA[Yarn Spinner is a tool for creating interactive dialogue for games. 
+      
+Write your conversations in Yarn, a simple programming language that's designed to be easy for writers to learn, while also powerful enough to handle whatever you need.
+
+This package provides the command-line tool 'ysc', which can compile and work with Yarn Spinner scripts.]]></PackageDescription>
+
+    <Company>Secret Lab Pty. Ltd.</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/YarnSpinnerTool/YarnSpinner-Console</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
