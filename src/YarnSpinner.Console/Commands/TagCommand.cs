@@ -14,7 +14,7 @@ namespace YarnSpinnerConsole
             var tags = new List<string>();
 
             var job = CompileCommand.GetCompilationJob(inputs);
-            foreach (var inputFile in job.Files.Select(file => new FileInfo(file.FileName)))
+            foreach (var inputFile in job.Inputs.Select(file => new FileInfo(file.FileName)))
             {
                 var compilationJob = CompilationJob.CreateFromFiles(inputFile.FullName);
                 compilationJob.CompilationType = CompilationJob.Type.StringsOnly;

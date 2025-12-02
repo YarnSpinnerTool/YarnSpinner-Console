@@ -13,7 +13,7 @@ namespace YarnSpinnerConsole
         public static void DumpTree(FileInfo[] input, DirectoryInfo outputDirectory, bool json)
         {
             var job = CompileCommand.GetCompilationJob(input);
-            foreach (var inputFile in job.Files.Select(file => new FileInfo(file.FileName)))
+            foreach (var inputFile in job.Inputs.Select(file => new FileInfo(file.FileName)))
             {
                 var source = File.ReadAllText(inputFile.FullName);
 
