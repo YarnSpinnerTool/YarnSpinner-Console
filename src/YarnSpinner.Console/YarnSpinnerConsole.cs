@@ -250,6 +250,23 @@
             }
             dumpCodeCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<FileInfo[], bool>(DumpCompiledCodeCommand.DumpCompiledCode);
 
+            var generateDefinitionsCommand = new Command("generate-definitions", "Generates YSLS files for your project.");
+            {
+                Argument<DirectoryInfo> inputDirectory = new Argument<DirectoryInfo>("inputDirectory", "The directory of the project containing your implementation files");
+                generateDefinitionsCommand.AddArgument(inputDirectory.ExistingOnly());
+
+                var outputDirectory = new Option<DirectoryInfo>("-o", "Output directory (default: current directory)");
+                outputDirectory.AddAlias("--output-directory");
+                outputDirectory.Argument.SetDefaultValue(System.Environment.CurrentDirectory);
+                generateDefinitionsCommand.AddOption(outputDirectory.ExistingOnly());
+
+                var projectType = new Option<string>("-e", "The engine this project uses. Used to determine the engine specific variations of the generated YSLS file.").FromAmong("Unity", "Godot-gd", "Godot-csharp", "Unreal");
+                projectType.AddAlias("--project-type");
+                projectType.Argument.SetDefaultValue("Unity");
+                generateDefinitionsCommand.AddOption(projectType);
+            }
+            generateDefinitionsCommand.Handler = System.CommandLine.Invocation.CommandHandler.Create<DirectoryInfo, DirectoryInfo, string>(GenerateDefinitionsCommand.GenerateDefinitions);
+
             // Create a root command with our subcommands
             var rootCommand = new RootCommand
             {
@@ -265,6 +282,7 @@
                 browsebinaryCommand,
                 createProjectFileCommand,
                 versionCommand,
+                generateDefinitionsCommand,
             };
 
             rootCommand.Description = "Compiles, runs and analyses Yarn code.";

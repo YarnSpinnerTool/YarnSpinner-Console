@@ -29,10 +29,9 @@ This package provides the command-line tool 'ysc', which can compile and work wi
     <PackageReference Include="ClosedXML" Version="0.95.4" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20253.1" />
     <PackageReference Include="CsvHelper" Version="12.2.2" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="3.11.0" />
   </ItemGroup>
 
   <!-- If Yarn Spinner doesn't exist at YarnSpinnerDevelopmentPath, then pull
