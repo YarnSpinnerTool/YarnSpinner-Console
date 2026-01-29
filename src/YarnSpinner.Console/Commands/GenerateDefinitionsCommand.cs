@@ -23,9 +23,7 @@ namespace YarnSpinnerConsole
                     System.Environment.Exit(1);
                     break;
                 case "Godot-csharp":
-                    Log.Warn("At this stage ysc only supports generating YSLS files for Unity but will attempt to read the Godot C# as Unity C#");
-                    GenerateYSLSFilesForUnity(inputDirectory, outputDirectory);
-                    Log.PrintLine("Processing of the files is complete, recommend double checking the YSLS for incompatibility with Godot.");
+                    GenerateYSLSFilesForGodot(inputDirectory, outputDirectory);
                     break;
                 case "Unreal":
                     Log.Error("At this stage ysc only supports generating YSLS files for Unity");
@@ -119,7 +117,94 @@ namespace YarnSpinnerConsole
                     $@"""functions"":[{string.Join(",", functionJSON)}]" +
                     "}";
 
-                    File.WriteAllText(Path.Combine(outputDirectory.FullName, $"{compilation.AssemblyName ?? "NULL"}.ysls.json"), ysls);
+                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
+                    File.WriteAllText(outputPath, ysls);
+                    Log.Info($"Wrote {outputPath}");
+                }
+                else
+                {
+                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
+                }
+            }
+        }
+
+        private static void GenerateYSLSFilesForGodot(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
+        {
+            var instances = MSBuildLocator.QueryVisualStudioInstances().FirstOrDefault();
+            if (instances == null)
+            {
+                Log.Error("Unable to find a working MSBuild, so cannot continue.");
+                System.Environment.Exit(1);
+            }
+
+            MSBuildLocator.RegisterInstance(instances);
+
+            if (inputDirectory == null)
+            {
+                Log.Error("The input directory is null");
+                System.Environment.Exit(1);
+            }
+
+            var projects = inputDirectory.GetFiles("*.csproj");
+            if (projects.Length > 0)
+            {
+                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
+            }
+            else
+            {
+                Log.Error($"No csproj files found in {inputDirectory.FullName}");
+                System.Environment.Exit(1);
+            }
+
+            var logger = new NullLogger();
+            foreach (var projectPath in projects)
+            {
+                MSBuildWorkspace workspace = MSBuildWorkspace.Create();
+                var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
+
+                var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
+                var assemblyName = compilation.AssemblyName ?? "NULL";
+
+                var hasYarnSpinner = compilation.ReferencedAssemblyNames.Any(name =>
+                    name.Name == "YarnSpinner" || name.Name == "YarnSpinner.Compiler");
+
+                if (!hasYarnSpinner)
+                {
+                    Log.Info($"Skipping {assemblyName}: does not reference YarnSpinner");
+                    continue;
+                }
+
+                List<Action> actions = new List<Action>();
+                foreach (var tree in compilation.SyntaxTrees)
+                {
+                    actions.AddRange(Analyser.GetActions(compilation, tree, logger));
+                }
+
+                if (actions.Count > 0)
+                {
+                    foreach (var action in actions)
+                    {
+                        if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
+                        {
+                            action.ContainsErrors = true;
+                        }
+                    }
+                    IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
+                    IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
+
+                    var ysls = "{" +
+                    @"""version"":2," +
+                    $@"""commands"":[{string.Join(",", commandJSON)}]," +
+                    $@"""functions"":[{string.Join(",", functionJSON)}]" +
+                    "}";
+
+                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
+                    File.WriteAllText(outputPath, ysls);
+                    Log.Info($"Wrote {outputPath}");
+                }
+                else
+                {
+                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
                 }
             }
         }
