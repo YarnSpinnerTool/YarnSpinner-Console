@@ -672,7 +672,7 @@ namespace YarnSpinnerConsole
                     compilation.GetTypeByMetadataName("System.Collections.IEnumerator"),
                     compilation.GetSpecialType(SpecialType.System_Void),
                 }
-                .NonNull(throwIfAnyNull: true)
+                .NonNull(throwIfAnyNull: false)
                 .ToList();
 
             List<ITypeSymbol> validTaskTypes = new List<ITypeSymbol?> {
