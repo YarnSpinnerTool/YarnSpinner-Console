@@ -19,14 +19,14 @@ namespace YarnSpinnerConsole
                     GenerateYSLSFilesForUnity(inputDirectory, outputDirectory);
                     break;
                 case "Godot-gd":
-                    Log.Error("At this stage ysc only supports generating YSLS files for Unity");
+                    Log.Error("At this stage ysc only supports generating YSLS files for csharp projects");
                     System.Environment.Exit(1);
                     break;
                 case "Godot-csharp":
                     GenerateYSLSFilesForGodot(inputDirectory, outputDirectory);
                     break;
                 case "Unreal":
-                    Log.Error("At this stage ysc only supports generating YSLS files for Unity");
+                    Log.Error("At this stage ysc only supports generating YSLS files for csharp projects");
                     System.Environment.Exit(1);
                     break;
                 default:
@@ -36,7 +36,7 @@ namespace YarnSpinnerConsole
             }
         }
 
-        private static void GenerateYSLSFilesForUnity(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
+        private static void GenerateYSLSFilesForCSharp(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory, List<string> requiredAssemblies, List<string> assemblyPrefixesToIgnore, List<string> assemblyPrefixesToKeep)
         {
             var instances = MSBuildLocator.QueryVisualStudioInstances().FirstOrDefault();
             if (instances == null)
@@ -53,6 +53,74 @@ namespace YarnSpinnerConsole
                 System.Environment.Exit(1);
             }
 
+            var projects = inputDirectory.GetFiles("*.csproj");
+            if (projects.Length > 0)
+            {
+                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
+            }
+            else
+            {
+                Log.Error($"No csproj files found in {inputDirectory.FullName}");
+                System.Environment.Exit(1);
+            }
+            var logger = new NullLogger();
+            foreach (var projectPath in projects)
+            {
+                MSBuildWorkspace workspace = MSBuildWorkspace.Create();
+                var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
+
+                var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
+                var assemblyName = compilation.AssemblyName ?? "NULL";
+
+                if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
+                {
+                    Log.Info("Assembly doesn't reference Yarn Spinner, skipping");
+                    continue;
+                }
+
+                if (assemblyPrefixesToIgnore.Any(prefix => assemblyName.StartsWith(prefix)) && !assemblyPrefixesToKeep.Any(prefix => assemblyName.StartsWith(prefix)))
+                {
+                    continue;
+                }
+
+                List<Action> actions = new List<Action>();
+                foreach (var tree in compilation.SyntaxTrees)
+                {
+                    actions.AddRange(Analyser.GetActions(compilation, tree, logger));
+                }
+
+                if (actions.Count > 0)
+                {
+                    foreach (var action in actions)
+                    {
+                        if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
+                        {
+                            action.ContainsErrors = true;
+                        }
+                    }
+                    IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
+                    IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
+
+                    var ysls = "{" +
+                    @"""version"":2," +
+                    $@"""commands"":[{string.Join(",", commandJSON)}]," +
+                    $@"""functions"":[{string.Join(",", functionJSON)}]" +
+                    "}";
+
+                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
+                    File.WriteAllText(outputPath, ysls);
+                    Log.Info($"Wrote {outputPath}");
+                }
+                else
+                {
+                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
+                }
+            }
+        }
+
+        private static void GenerateYSLSFilesForUnity(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
+        {
+            // we don't want to generate YSLS file for anything in the built in assemblies
             var prefixesToIgnore = new List<string>()
             {
                 "YarnSpinner.Unity",
@@ -63,150 +131,25 @@ namespace YarnSpinnerConsole
             {
                 "YarnSpinner.Unity.Samples",
             };
-
-            var projects = inputDirectory.GetFiles("*.csproj");
-            if (projects.Length > 0)
+            // and we need to have the Yarn Spinner dll referenced
+            var required = new List<string>()
             {
-                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
-            }
-            else
-            {
-                Log.Error($"No csproj files found in {inputDirectory.FullName}");
-                System.Environment.Exit(1);
-            }
-            var logger = new NullLogger();
-            foreach (var projectPath in projects)
-            {
-                MSBuildWorkspace workspace = MSBuildWorkspace.Create();
-                var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
-
-                var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
-                var assemblyName = compilation.AssemblyName ?? "NULL";
-
-                if (compilation.ReferencedAssemblyNames.Count(name => name.Name == "YarnSpinner.Unity") == 0)
-                {
-                    continue;
-                }
-
-                if (prefixesToIgnore.Any(prefix => assemblyName.StartsWith(prefix)) && !prefixesToKeep.Any(prefix => assemblyName.StartsWith(prefix)))
-                {
-                    continue;
-                }
-
-                List<Action> actions = new List<Action>();
-                foreach (var tree in compilation.SyntaxTrees)
-                {
-                    actions.AddRange(Analyser.GetActions(compilation, tree, logger));
-                }
-
-                if (actions.Count > 0)
-                {
-                    foreach (var action in actions)
-                    {
-                        if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
-                        {
-                            action.ContainsErrors = true;
-                        }
-                    }
-                    IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
-                    IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
-
-                    var ysls = "{" +
-                    @"""version"":2," +
-                    $@"""commands"":[{string.Join(",", commandJSON)}]," +
-                    $@"""functions"":[{string.Join(",", functionJSON)}]" +
-                    "}";
-
-                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
-                    File.WriteAllText(outputPath, ysls);
-                    Log.Info($"Wrote {outputPath}");
-                }
-                else
-                {
-                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
-                }
-            }
+                "YarnSpinner.Unity",
+            };
+            GenerateYSLSFilesForCSharp(inputDirectory, outputDirectory, required, prefixesToIgnore, prefixesToKeep);
         }
 
         private static void GenerateYSLSFilesForGodot(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
         {
-            var instances = MSBuildLocator.QueryVisualStudioInstances().FirstOrDefault();
-            if (instances == null)
+            // we don't want to knock out any specific assemblies for godot
+            List<string> emptyList = new List<string>();
+            // but we do still need to reference the Yarn Spinner DLLs
+            var required = new List<string>()
             {
-                Log.Error("Unable to find a working MSBuild, so cannot continue.");
-                System.Environment.Exit(1);
-            }
-
-            MSBuildLocator.RegisterInstance(instances);
-
-            if (inputDirectory == null)
-            {
-                Log.Error("The input directory is null");
-                System.Environment.Exit(1);
-            }
-
-            var projects = inputDirectory.GetFiles("*.csproj");
-            if (projects.Length > 0)
-            {
-                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
-            }
-            else
-            {
-                Log.Error($"No csproj files found in {inputDirectory.FullName}");
-                System.Environment.Exit(1);
-            }
-
-            var logger = new NullLogger();
-            foreach (var projectPath in projects)
-            {
-                MSBuildWorkspace workspace = MSBuildWorkspace.Create();
-                var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
-
-                var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
-                var assemblyName = compilation.AssemblyName ?? "NULL";
-
-                var hasYarnSpinner = compilation.ReferencedAssemblyNames.Any(name =>
-                    name.Name == "YarnSpinner" || name.Name == "YarnSpinner.Compiler");
-
-                if (!hasYarnSpinner)
-                {
-                    Log.Info($"Skipping {assemblyName}: does not reference YarnSpinner");
-                    continue;
-                }
-
-                List<Action> actions = new List<Action>();
-                foreach (var tree in compilation.SyntaxTrees)
-                {
-                    actions.AddRange(Analyser.GetActions(compilation, tree, logger));
-                }
-
-                if (actions.Count > 0)
-                {
-                    foreach (var action in actions)
-                    {
-                        if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
-                        {
-                            action.ContainsErrors = true;
-                        }
-                    }
-                    IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
-                    IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
-
-                    var ysls = "{" +
-                    @"""version"":2," +
-                    $@"""commands"":[{string.Join(",", commandJSON)}]," +
-                    $@"""functions"":[{string.Join(",", functionJSON)}]" +
-                    "}";
-
-                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
-                    File.WriteAllText(outputPath, ysls);
-                    Log.Info($"Wrote {outputPath}");
-                }
-                else
-                {
-                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
-                }
-            }
+                "YarnSpinner",
+                "YarnSpinner.Compiler",
+            };
+            GenerateYSLSFilesForCSharp(inputDirectory, outputDirectory, required, emptyList, emptyList);
         }
     }
 
