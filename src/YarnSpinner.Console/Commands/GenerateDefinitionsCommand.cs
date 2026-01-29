@@ -52,13 +52,8 @@ namespace YarnSpinnerConsole
             if (inputDirectory == null)
             {
                 Log.Error("The input directory is null");
-                // System.Environment.Exit(1);
-
-                DirectoryInfo blork = new DirectoryInfo("/Users/timnugent/Development/YSLSTricks/");
-                inputDirectory = blork;
+                System.Environment.Exit(1);
             }
-
-            var output = "/Users/timnugent/Downloads/generatedfiles/";
 
             var prefixesToIgnore = new List<string>()
             {
@@ -115,7 +110,7 @@ namespace YarnSpinnerConsole
                     $@"""functions"":[{string.Join(",", functionJSON)}]" +
                     "}";
 
-                    File.WriteAllText(Path.Combine(output, $"{compilation.AssemblyName ?? "NULL"}.ysls.json"), ysls);
+                    File.WriteAllText(Path.Combine(outputDirectory.FullName, $"{compilation.AssemblyName ?? "NULL"}.ysls.json"), ysls);
                 }
             }
         }
