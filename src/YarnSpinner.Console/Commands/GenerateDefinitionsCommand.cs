@@ -72,6 +72,15 @@ namespace YarnSpinnerConsole
             };
 
             var projects = inputDirectory.GetFiles("*.csproj");
+            if (projects.Length > 0)
+            {
+                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
+            }
+            else
+            {
+                Log.Error($"No csproj files found in {inputDirectory.FullName}");
+                System.Environment.Exit(1);
+            }
             var logger = new NullLogger();
             foreach (var projectPath in projects)
             {
