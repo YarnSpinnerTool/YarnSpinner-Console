@@ -74,7 +74,7 @@ namespace YarnSpinnerConsole
 
                 if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
                 {
-                    Log.Info("Assembly doesn't reference Yarn Spinner, skipping");
+                    Log.Info($"Assembly {assemblyName} doesn't reference Yarn Spinner, skipping");
                     continue;
                 }
 
