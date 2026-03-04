@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace YarnSpinnerConsole
 {
     using System.Collections.Generic;
@@ -70,6 +72,13 @@ namespace YarnSpinnerConsole
                 var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
 
                 var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
+
+                if (compilation == null)
+                {
+                    Log.Error("Failed to get a compilation for " + projectPath.FullName);
+                    continue;
+                }
+
                 var assemblyName = compilation.AssemblyName ?? "NULL";
 
                 if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
@@ -157,7 +166,7 @@ namespace YarnSpinnerConsole
     {
         void Write(object obj);
         void WriteLine(object obj);
-        void WriteException(System.Exception ex, string message = null);
+        void WriteException(System.Exception ex, string? message = null);
 
         void Inc();
         void Dec();
@@ -177,7 +186,7 @@ namespace YarnSpinnerConsole
             Log.PrintLine(tabs + obj.ToString());
         }
 
-        public void WriteException(Exception ex, string message = null)
+        public void WriteException(Exception ex, string? message = null)
         {
             if (message == null)
             {
