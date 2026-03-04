@@ -27,7 +27,7 @@ namespace YarnSpinnerConsole
                     {
                         continue;
                     }
-                    
+
                     Log.PrintLine($"\t- {header.Key}: \"{header.Value}\"");
                 }
             }

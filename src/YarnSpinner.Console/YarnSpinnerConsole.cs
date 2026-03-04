@@ -61,7 +61,7 @@
                 };
                 compileCommand.Add(outputStringTableOption);
 
-                var outputMetadataTableOption = new Option<string>("--output-metadata-table-name","-m")
+                var outputMetadataTableOption = new Option<string>("--output-metadata-table-name", "-m")
                 {
                     Description = "Output metadata table filename (default: {name}-Metadata.csv",
                 };
@@ -106,7 +106,7 @@
                 };
                 runCommand.Add(inputsArgument.AcceptExistingOnly());
 
-                var startNodeOption = new Option<string>("--start-node","-s")
+                var startNodeOption = new Option<string>("--start-node", "-s")
                 {
                     Description = "Name of the node to start running",
                     Arity = ArgumentArity.ExactlyOne,
@@ -209,7 +209,7 @@
                     Description = "Output directory to write the newly tagged files (default: override the input files)"
                 };
                 tagCommand.Add(outputOption.AcceptExistingOnly());
-                
+
                 tagCommand.SetAction(parseResult => TagCommand.TagFiles(
                     parseResult.GetValue(inputsArgument),
                     parseResult.GetValue(outputOption)

@@ -533,7 +533,7 @@ namespace YarnSpinnerConsole
             List<Diagnostic> diagnostics = new List<Diagnostic>();
             ParameterListSyntax? parameterList = null;
             string? identifier = null;
-            
+
             if (this.MethodDeclarationSyntax is MethodDeclarationSyntax methodDeclaration)
             {
                 identifier = methodDeclaration.Identifier.ToString();
@@ -546,7 +546,7 @@ namespace YarnSpinnerConsole
                 logger?.WriteLine($"identified {identifier} as a local function");
                 parameterList = localFunctionStatement.ParameterList;
             }
-            else if(this.MethodDeclarationSyntax is LambdaExpressionSyntax lambdaExpression)
+            else if (this.MethodDeclarationSyntax is LambdaExpressionSyntax lambdaExpression)
             {
                 logger?.WriteLine("identifed the action as a lambda.");
                 var actionLocation = lambdaExpression.GetLocation();
@@ -569,7 +569,7 @@ namespace YarnSpinnerConsole
                     diagnostics.Add(Diagnostic.Create(Diagnostics.YS1012ActionIsALambda, actionLocation));
                 }
             }
-            
+
             if (parameterList == null || parameterList.Parameters.Count() == 0)
             {
                 logger?.WriteLine($"{identifier} has no parameters, ignoring");
@@ -622,7 +622,7 @@ namespace YarnSpinnerConsole
                     }
                 }
                 else
-                {    
+                {
                     if (typeInfo.GetYarnTypeString() == "any" && typeInfo.BaseType?.Name != "Component")
                     {
                         // we have an invalid type

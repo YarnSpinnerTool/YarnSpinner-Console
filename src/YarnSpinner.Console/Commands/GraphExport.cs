@@ -101,7 +101,7 @@ namespace YarnSpinnerConsole
                     {
                         continue;
                     }
-                    
+
                     // they need to be named clusterSomething to be clustered
                     sub.AppendLine($"\tsubgraph cluster{i}{{");
                     sub.Append("\t\t");
@@ -131,7 +131,7 @@ namespace YarnSpinnerConsole
                         links.AppendLine($"\t{connection.node} -> {link};");
                     }
                 }
-            }   
+            }
 
             sb.Append(links);
             sb.Append(sub);

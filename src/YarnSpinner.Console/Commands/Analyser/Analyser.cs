@@ -850,7 +850,7 @@ namespace YarnSpinnerConsole
                     return AsyncType.AsyncTask;
                 default:
                     return default;
-            };
+            }
         }
 
         private static List<Parameter> GetParams(IMethodSymbol symbol, XElement? documentationXML, ILogger? logger)
@@ -876,7 +876,7 @@ namespace YarnSpinnerConsole
             }
 
             if (symbol.Parameters.Count() > 0)
-            {    
+            {
                 logger?.WriteLine($"Processing {symbol.Name} parameters");
             }
             else

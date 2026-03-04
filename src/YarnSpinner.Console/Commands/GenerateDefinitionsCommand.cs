@@ -2,14 +2,14 @@
 
 namespace YarnSpinnerConsole
 {
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using Microsoft.Build.Locator;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.MSBuild;
     using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
 
     public static class GenerateDefinitionsCommand
     {
@@ -173,7 +173,7 @@ namespace YarnSpinnerConsole
         void SetDepth(int depth);
     }
 
-    public class CmdLogger: ILogger
+    public class CmdLogger : ILogger
     {
         public void Write(object obj)
         {
@@ -233,8 +233,8 @@ namespace YarnSpinnerConsole
 
         public void WriteException(System.Exception ex, string? message = null) { }
 
-        public void Inc(){}
-        public void Dec(){}
-        public void SetDepth(int depth) {}
+        public void Inc() { }
+        public void Dec() { }
+        public void SetDepth(int depth) { }
     }
 }

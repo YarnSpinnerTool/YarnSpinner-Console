@@ -74,7 +74,7 @@ public static class Diagnostics
                         defaultSeverity: DiagnosticSeverity.Warning,
                         isEnabledByDefault: true,
                         helpLinkUri: "https://docs.yarnspinner.dev/using-yarnspinner-with-unity/creating-commands-functions");
-    
+
     public static readonly DiagnosticDescriptor YS1008ActionsParamsArraysMustBeOfYarnTypes = new DiagnosticDescriptor(
                         "YS1008",
                         title: "Params arrays must be of a Yarn compatible type",
@@ -83,7 +83,7 @@ public static class Diagnostics
                         defaultSeverity: DiagnosticSeverity.Warning,
                         isEnabledByDefault: true,
                         helpLinkUri: "https://docs.yarnspinner.dev/yarn-spinner-for-unity/creating-commands-functions");
-    
+
     public static readonly DiagnosticDescriptor YS1009ActionsEnumAttributedParameterIsOfIncompatibleType = new DiagnosticDescriptor(
                         "YS1009",
                         title: "Yarn Enum attributed parameters must be of a Yarn compatible type",
@@ -92,7 +92,7 @@ public static class Diagnostics
                         defaultSeverity: DiagnosticSeverity.Warning,
                         isEnabledByDefault: true,
                         helpLinkUri: "https://docs.yarnspinner.dev/yarn-spinner-for-unity/creating-commands-functions");
-    
+
     public static readonly DiagnosticDescriptor YS1010ActionsNodeAttributedParameterIsOfIncompatibleType = new DiagnosticDescriptor(
                         "YS1010",
                         title: "Yarn Node attributed parameters must be a string",
@@ -101,7 +101,7 @@ public static class Diagnostics
                         defaultSeverity: DiagnosticSeverity.Warning,
                         isEnabledByDefault: true,
                         helpLinkUri: "https://docs.yarnspinner.dev/yarn-spinner-for-unity/creating-commands-functions");
-    
+
     public static readonly DiagnosticDescriptor YS1011ActionsParameterIsAnIncompatibleType = new DiagnosticDescriptor(
                         "YS1011",
                         title: "Yarn action parameters must be of a Yarn compatible type",
@@ -110,7 +110,7 @@ public static class Diagnostics
                         defaultSeverity: DiagnosticSeverity.Warning,
                         isEnabledByDefault: true,
                         helpLinkUri: "https://docs.yarnspinner.dev/yarn-spinner-for-unity/creating-commands-functions");
-    
+
     public static readonly DiagnosticDescriptor YS1012ActionIsALambda = new DiagnosticDescriptor(
                         "YS1012",
                         title: "Yarn actions can be lambdas but this generally isn't recommended.",
