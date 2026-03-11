@@ -55,74 +55,103 @@ namespace YarnSpinnerConsole
                 System.Environment.Exit(1);
             }
 
-            var projects = inputDirectory.GetFiles("*.csproj");
-            if (projects.Length > 0)
+            var solutions = inputDirectory.GetFiles("*.sln");
+
+            if (solutions.Length > 1)
             {
-                Log.Info($"Found {projects.Length} csproj file(s) in {inputDirectory.FullName}");
-            }
-            else
-            {
-                Log.Error($"No csproj files found in {inputDirectory.FullName}");
+                Log.Error($"Multiple solution files found in {inputDirectory.FullName}");
                 System.Environment.Exit(1);
             }
-            var logger = new NullLogger();
-            foreach (var projectPath in projects)
+            if (solutions.Length == 0)
             {
-                MSBuildWorkspace workspace = MSBuildWorkspace.Create();
-                var project = workspace.OpenProjectAsync(projectPath.FullName).Result;
+                Log.Error($"No solution files found in {inputDirectory.FullName}");
+                System.Environment.Exit(1);
+            }
 
-                var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
+            var logger = new NullLogger();
 
-                if (compilation == null)
+            var tracker = new TimeTracker((message, phaseSeconds, totalSeconds) => Log.Info($" ⏰ {string.Format("{0:F2}", phaseSeconds),7}s {message} ({totalSeconds:F2}s total)"));
+
+            tracker.StartPhase("Open solution");
+            Log.Info("📋 Opening " + solutions.Single().FullName);
+
+            var workspace = MSBuildWorkspace.Create();
+            var solution = workspace.OpenSolutionAsync(solutions.Single().FullName).Result;
+
+            foreach (var project in solution.Projects)
+            {
+                try
                 {
-                    Log.Error("Failed to get a compilation for " + projectPath.FullName);
-                    continue;
-                }
+                    tracker.StartPhase("Get compilation");
+                    Log.Info("📋 Starting work on " + project.AssemblyName);
+                    var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
 
-                var assemblyName = compilation.AssemblyName ?? "NULL";
+                    tracker.StartPhase("Check compilation");
 
-                if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
-                {
-                    Log.Info($"Assembly {assemblyName} doesn't reference Yarn Spinner, skipping");
-                    continue;
-                }
-
-                if (assemblyPrefixesToIgnore.Any(prefix => assemblyName.StartsWith(prefix)) && !assemblyPrefixesToKeep.Any(prefix => assemblyName.StartsWith(prefix)))
-                {
-                    continue;
-                }
-
-                List<Action> actions = new List<Action>();
-                foreach (var tree in compilation.SyntaxTrees)
-                {
-                    actions.AddRange(Analyser.GetActions(compilation, tree, logger));
-                }
-
-                if (actions.Count > 0)
-                {
-                    foreach (var action in actions)
+                    if (compilation == null)
                     {
-                        if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
-                        {
-                            action.ContainsErrors = true;
-                        }
+                        tracker.Stop();
+                        Log.Error(" 🤬 Failed to get a compilation for " + project.Solution);
+                        continue;
                     }
-                    IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
-                    IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
 
-                    var ysls = "{" +
-                    @"""version"":2," +
-                    $@"""commands"":[{string.Join(",", commandJSON)}]," +
-                    $@"""functions"":[{string.Join(",", functionJSON)}]" +
-                    "}";
+                    var assemblyName = compilation.AssemblyName ?? "NULL";
 
-                    var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
-                    File.WriteAllText(outputPath, ysls);
-                    Log.Info($"Wrote {outputPath}");
+                    if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
+                    {
+                        tracker.Stop();
+                        Log.Info($" 🫥 Assembly {assemblyName} doesn't reference Yarn Spinner, skipping");
+                        continue;
+                    }
+
+                    if (assemblyPrefixesToIgnore.Any(prefix => assemblyName.StartsWith(prefix)) && !assemblyPrefixesToKeep.Any(prefix => assemblyName.StartsWith(prefix)))
+                    {
+                        tracker.Stop();
+                        Log.Info($" 🫥 {assemblyName} references an ignored assembly (and doesn't reference a kept assembly), skipping");
+                        continue;
+                    }
+
+                    tracker.StartPhase("Get actions");
+
+                    List<Action> actions = new List<Action>();
+                    foreach (var tree in compilation.SyntaxTrees)
+                    {
+                        actions.AddRange(Analyser.GetActions(compilation, tree, logger));
+                    }
+
+                    if (actions.Count > 0)
+                    {
+                        tracker.StartPhase("Validate actions");
+                        foreach (var action in actions)
+                        {
+                            if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
+                            {
+                                action.ContainsErrors = true;
+                            }
+                        }
+                        IEnumerable<string> commandJSON = actions.Where(a => a.Type == ActionType.Command).Select(a => a.ToJSON());
+                        IEnumerable<string> functionJSON = actions.Where(a => a.Type == ActionType.Function).Select(a => a.ToJSON());
+
+                        var ysls = "{" +
+                        @"""version"":2," +
+                        $@"""commands"":[{string.Join(",", commandJSON)}]," +
+                        $@"""functions"":[{string.Join(",", functionJSON)}]" +
+                        "}";
+
+                        var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
+                        File.WriteAllText(outputPath, ysls);
+                        tracker.Stop();
+                        Log.Info($" 😎 Wrote {outputPath}");
+                    }
+                    else
+                    {
+                        tracker.Stop();
+                        Log.Info($" 😴 No actions found in {assemblyName}, skipping ysls.json generation");
+                    }
                 }
-                else
+                finally
                 {
-                    Log.Info($"No actions found in {assemblyName}, skipping ysls.json generation");
+                    tracker.Stop();
                 }
             }
         }
