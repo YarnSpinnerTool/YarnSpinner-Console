@@ -20,7 +20,9 @@ namespace YarnSpinnerConsole
         {
             if (CurrentPhase != null)
             {
+#if DEBUG
                 OnLog(CurrentPhase, Stopwatch.Elapsed.TotalSeconds, TotalStopwatch.Elapsed.TotalSeconds);
+#endif
             }
             CurrentPhase = phase;
             Stopwatch.Restart();
@@ -31,7 +33,9 @@ namespace YarnSpinnerConsole
         {
             if (CurrentPhase != null)
             {
+#if DEBUG
                 OnLog(CurrentPhase, Stopwatch.Elapsed.TotalSeconds, TotalStopwatch.Elapsed.TotalSeconds);
+#endif
             }
             CurrentPhase = null;
             Stopwatch.Stop();
