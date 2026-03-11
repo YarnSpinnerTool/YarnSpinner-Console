@@ -10,6 +10,7 @@ namespace YarnSpinnerConsole
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
 
     public static class GenerateDefinitionsCommand
     {
@@ -78,40 +79,43 @@ namespace YarnSpinnerConsole
             var workspace = MSBuildWorkspace.Create();
             var solution = workspace.OpenSolutionAsync(solutions.Single().FullName).Result;
 
-            foreach (var project in solution.Projects)
+            tracker.StartPhase("Extract actions");
+
+            Parallel.ForEach(solution.Projects, (project) =>
             {
+                var projectTracker = new TimeTracker((message, phaseSeconds, totalSeconds) => Log.Info($" ⏰ {project.AssemblyName}: {string.Format("{0:F2}", phaseSeconds),7}s {message} ({totalSeconds:F2}s total)"));
                 try
                 {
-                    tracker.StartPhase("Get compilation");
+                    projectTracker.StartPhase("Get compilation");
                     Log.Info("📋 Starting work on " + project.AssemblyName);
                     var compilation = project.WithParseOptions(CSharpParseOptions.Default).GetCompilationAsync().Result as CSharpCompilation;
 
-                    tracker.StartPhase("Check compilation");
+                    projectTracker.StartPhase("Check compilation");
 
                     if (compilation == null)
                     {
-                        tracker.Stop();
+                        projectTracker.Stop();
                         Log.Error(" 🤬 Failed to get a compilation for " + project.Solution);
-                        continue;
+                        return;
                     }
 
                     var assemblyName = compilation.AssemblyName ?? "NULL";
 
                     if (!compilation.ReferencedAssemblyNames.Any(a => requiredAssemblies.Contains(a.Name)))
                     {
-                        tracker.Stop();
+                        projectTracker.Stop();
                         Log.Info($" 🫥 Assembly {assemblyName} doesn't reference Yarn Spinner, skipping");
-                        continue;
+                        return;
                     }
 
                     if (assemblyPrefixesToIgnore.Any(prefix => assemblyName.StartsWith(prefix)) && !assemblyPrefixesToKeep.Any(prefix => assemblyName.StartsWith(prefix)))
                     {
-                        tracker.Stop();
+                        projectTracker.Stop();
                         Log.Info($" 🫥 {assemblyName} references an ignored assembly (and doesn't reference a kept assembly), skipping");
-                        continue;
+                        return;
                     }
 
-                    tracker.StartPhase("Get actions");
+                    projectTracker.StartPhase("Get actions");
 
                     List<Action> actions = new List<Action>();
                     foreach (var tree in compilation.SyntaxTrees)
@@ -121,7 +125,7 @@ namespace YarnSpinnerConsole
 
                     if (actions.Count > 0)
                     {
-                        tracker.StartPhase("Validate actions");
+                        projectTracker.StartPhase("Validate actions");
                         foreach (var action in actions)
                         {
                             if (action.Validate(compilation, logger).Any(d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error))
@@ -140,20 +144,24 @@ namespace YarnSpinnerConsole
 
                         var outputPath = Path.Combine(outputDirectory.FullName, $"{assemblyName}.ysls.json");
                         File.WriteAllText(outputPath, ysls);
-                        tracker.Stop();
+                        projectTracker.Stop();
                         Log.Info($" 😎 Wrote {outputPath}");
                     }
                     else
                     {
-                        tracker.Stop();
+                        projectTracker.Stop();
                         Log.Info($" 😴 No actions found in {assemblyName}, skipping ysls.json generation");
                     }
                 }
                 finally
                 {
-                    tracker.Stop();
+                    projectTracker.Stop();
                 }
-            }
+
+            });
+
+            tracker.Stop();
+
         }
 
         private static void GenerateYSLSFilesForUnity(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
