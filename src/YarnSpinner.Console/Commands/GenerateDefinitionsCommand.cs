@@ -56,7 +56,7 @@ namespace YarnSpinnerConsole
                 System.Environment.Exit(1);
             }
 
-            var solutions = inputDirectory.GetFiles("*.sln");
+            var solutions = inputDirectory.GetFiles("*.sln").Concat(inputDirectory.GetFiles("*.slnx")).ToArray();
 
             if (solutions.Length > 1)
             {
