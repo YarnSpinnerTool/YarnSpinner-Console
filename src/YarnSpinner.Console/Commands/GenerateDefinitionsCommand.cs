@@ -77,7 +77,14 @@ namespace YarnSpinnerConsole
             Log.Info("📋 Opening " + solutions.Single().FullName);
 
             var workspace = MSBuildWorkspace.Create();
-            var solution = workspace.OpenSolutionAsync(solutions.Single().FullName).Result;
+            var progress = new Progress<ProjectLoadProgress>(p =>
+            {
+                if (p.Operation == ProjectLoadOperation.Resolve)
+                {
+                    Log.Info($"  👀 {p.FilePath}");
+                }
+            });
+            var solution = workspace.OpenSolutionAsync(solutions.Single().FullName, progress).Result;
 
             tracker.StartPhase("Extract actions");
 
