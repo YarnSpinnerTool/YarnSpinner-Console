@@ -22,8 +22,7 @@ namespace YarnSpinnerConsole
                     GenerateYSLSFilesForUnity(inputDirectory, outputDirectory);
                     break;
                 case "Godot-gd":
-                    Log.Error("At this stage ysc only supports generating YSLS files for csharp projects");
-                    System.Environment.Exit(1);
+                    GenerateYSLSFilesForGodotGDScript(inputDirectory, outputDirectory);
                     break;
                 case "Godot-csharp":
                     GenerateYSLSFilesForGodot(inputDirectory, outputDirectory);
@@ -203,6 +202,197 @@ namespace YarnSpinnerConsole
                 "YarnSpinner.Compiler",
             };
             GenerateYSLSFilesForCSharp(inputDirectory, outputDirectory, required, emptyList, emptyList);
+        }
+
+        private static void GenerateYSLSFilesForGodotGDScript(DirectoryInfo inputDirectory, DirectoryInfo outputDirectory)
+        {
+            Log.Info($"Scanning GDScript files in {inputDirectory.FullName}");
+
+            var gdFiles = inputDirectory.GetFiles("*.gd", SearchOption.AllDirectories);
+            Log.Info($"Found {gdFiles.Length} .gd files");
+
+            var commands = new List<string>();
+            var functions = new List<string>();
+
+            foreach (var file in gdFiles)
+            {
+                var lines = File.ReadAllLines(file.FullName);
+                var relativePath = Path.GetRelativePath(inputDirectory.FullName, file.FullName);
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var line = lines[i].Trim();
+
+                    string? prefix = null;
+                    bool isFunction = false;
+
+                    if (line.StartsWith("func _yarn_command_"))
+                    {
+                        prefix = "_yarn_command_";
+                    }
+                    else if (line.StartsWith("func _yarn_function_"))
+                    {
+                        prefix = "_yarn_function_";
+                        isFunction = true;
+                    }
+
+                    if (prefix == null) continue;
+
+                    // Handle multi-line signatures by joining lines until we find ')'
+                    var fullLine = line;
+                    while (!fullLine.Contains(')') && i + 1 < lines.Length)
+                    {
+                        i++;
+                        fullLine += " " + lines[i].Trim();
+                    }
+
+                    var parsed = ParseGDScriptAction(fullLine, prefix, isFunction, relativePath, i);
+                    if (parsed != null)
+                    {
+                        (isFunction ? functions : commands).Add(parsed);
+                    }
+                }
+            }
+
+            if (commands.Count == 0 && functions.Count == 0)
+            {
+                Log.Info(" 😴 No Yarn commands or functions found in GDScript files");
+                return;
+            }
+
+            var ysls = "{" +
+                @"""version"":2," +
+                $@"""commands"":[{string.Join(",", commands)}]," +
+                $@"""functions"":[{string.Join(",", functions)}]" +
+                "}";
+
+            if (!outputDirectory.Exists)
+            {
+                outputDirectory.Create();
+            }
+
+            var outputPath = Path.Combine(outputDirectory.FullName, "GDScript.ysls.json");
+            File.WriteAllText(outputPath, ysls);
+            Log.Info($" 😎 Found {commands.Count} commands and {functions.Count} functions");
+            Log.Info($" 😎 Wrote {outputPath}");
+        }
+
+        private static string? ParseGDScriptAction(string line, string prefix, bool isFunction, string fileName, int lineNumber)
+        {
+            var afterFunc = line.Substring("func ".Length);
+            var parenStart = afterFunc.IndexOf('(');
+            if (parenStart < 0) return null;
+
+            var methodName = afterFunc.Substring(0, parenStart);
+            var yarnName = methodName.Substring(prefix.Length);
+
+            var parenEnd = afterFunc.IndexOf(')');
+            if (parenEnd < 0) return null;
+
+            var paramString = afterFunc.Substring(parenStart + 1, parenEnd - parenStart - 1).Trim();
+            var parameters = ParseGDScriptParams(paramString);
+
+            // Extract return type from -> annotation
+            string? returnTypeStr = null;
+            var arrowIndex = afterFunc.IndexOf("->", parenEnd);
+            if (arrowIndex >= 0)
+            {
+                returnTypeStr = afterFunc.Substring(arrowIndex + 2).Trim().TrimEnd(':').Trim();
+            }
+
+            var result = new Dictionary<string, object?>
+            {
+                ["yarnName"] = yarnName,
+                ["definitionName"] = methodName,
+                ["fileName"] = fileName,
+                ["language"] = "gdscript",
+                ["containsErrors"] = false,
+                ["parameters"] = parameters,
+                ["location"] = new Dictionary<string, object>
+                {
+                    ["start"] = new Dictionary<string, int> { ["line"] = lineNumber, ["character"] = 0 },
+                    ["end"] = new Dictionary<string, int> { ["line"] = lineNumber, ["character"] = line.Length }
+                }
+            };
+
+            if (isFunction)
+            {
+                var yarnType = returnTypeStr != null ? MapGDScriptTypeToYarn(returnTypeStr) : "any";
+                result["return"] = new Dictionary<string, string> { ["type"] = yarnType };
+            }
+            else
+            {
+                result["async"] = returnTypeStr?.Equals("Signal", StringComparison.OrdinalIgnoreCase) == true;
+            }
+
+            return System.Text.Json.JsonSerializer.Serialize(result);
+        }
+
+        private static List<Dictionary<string, object?>> ParseGDScriptParams(string paramString)
+        {
+            var result = new List<Dictionary<string, object?>>();
+            if (string.IsNullOrWhiteSpace(paramString)) return result;
+
+            var parts = paramString.Split(',');
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+
+                string name;
+                string type = "any";
+                string? defaultValue = null;
+
+                // Check for default value: param := value or param = value
+                var eqIndex = trimmed.IndexOf('=');
+                string beforeDefault = trimmed;
+                if (eqIndex >= 0)
+                {
+                    // Handle := (typed default) and = (untyped default)
+                    if (eqIndex > 0 && trimmed[eqIndex - 1] == ':')
+                    {
+                        beforeDefault = trimmed.Substring(0, eqIndex - 1).Trim();
+                    }
+                    else
+                    {
+                        beforeDefault = trimmed.Substring(0, eqIndex).Trim();
+                    }
+                    defaultValue = trimmed.Substring(eqIndex + 1).Trim();
+                }
+
+                // Check for type annotation: param: Type
+                var colonIndex = beforeDefault.IndexOf(':');
+                if (colonIndex >= 0)
+                {
+                    name = beforeDefault.Substring(0, colonIndex).Trim();
+                    var gdType = beforeDefault.Substring(colonIndex + 1).Trim();
+                    type = MapGDScriptTypeToYarn(gdType);
+                }
+                else
+                {
+                    name = beforeDefault;
+                }
+
+                var param = new Dictionary<string, object?> { ["name"] = name, ["type"] = type };
+                if (defaultValue != null)
+                {
+                    param["defaultValue"] = defaultValue;
+                }
+                result.Add(param);
+            }
+
+            return result;
+        }
+
+        private static string MapGDScriptTypeToYarn(string gdType)
+        {
+            return gdType.ToLowerInvariant() switch
+            {
+                "string" or "stringname" => "string",
+                "int" or "float" => "number",
+                "bool" => "bool",
+                _ => "any",
+            };
         }
     }
 
