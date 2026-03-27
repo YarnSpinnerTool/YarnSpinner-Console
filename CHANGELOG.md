@@ -12,6 +12,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+## [3.2.0] 2025-06-12
+
+### Added
+
+- Added a new command, `generate-definitions`, which reads a directory containing a `.sln` or multiple `.csproj` files, and produces a Yarn Spinner Language Server actions definition file. This command is intended for use in projects that use Yarn Spinner with an engine that doesn't have the ability to generate these files itself.
+
+### Changed
+
+- Updated to Yarn Spinner 3.2.0.
+
+## [3.1.0] 2025-12-02
+
+### Changed
+
+- Updated to Yarn Spinner 3.1.0.
+
 ## [3.0.2] 2025-06-12
 
 ### Changed
