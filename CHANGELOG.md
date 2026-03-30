@@ -12,7 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
-## [3.2.0] 2025-06-12
+## [3.2.1] 2026-03-30
+
+### Changed
+
+- Disabled trimming on `ysc` to resolve project deserialisation issue.
+
+## [3.2.0] 2025-03-27
 
 ### Added
 
