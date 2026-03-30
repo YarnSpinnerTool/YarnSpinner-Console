@@ -6,6 +6,8 @@
     <RootNamespace>YarnSpinnerConsole</RootNamespace>
     <UseAppHost>true</UseAppHost>
     <PublishSelfContained>true</PublishSelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>YarnSpinner.Console</PackageId>
     <PackAsTool>true</PackAsTool>
