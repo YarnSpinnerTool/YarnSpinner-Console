@@ -39,7 +39,7 @@ namespace YarnSpinnerConsole
                 try
                 {
                     var contents = File.ReadAllText(inputFile.FullName);
-                    var taggedFile = Utility.AddTagsToLines(contents, tags);
+                    var taggedFile = Utility.TagLines(contents);
 
                     var path = inputFile.FullName;
 
@@ -47,7 +47,7 @@ namespace YarnSpinnerConsole
                     {
                         path = outputDirectory.FullName + inputFile.Name;
                     }
-                    writeOut[path] = taggedFile;
+                    writeOut[path] = taggedFile.ModifiedSource;
                 }
                 catch (System.Exception e)
                 {
