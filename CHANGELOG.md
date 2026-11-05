@@ -8,7 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `ysc` now expands `${workspaceRoot}` in a Yarn Project's `definitions` paths. The workspace root is the `YARN_SPINNER_WORKSPACE_ROOT` environment variable if it is set. Otherwise it's the nearest folder above the Yarn Project that is a Unity, Godot or Unreal project, and the current working directory if there isn't one.
+
 ### Changed
+
+- `ysc compile` now reads function declarations from every file in a Yarn Project's `definitions`, not only the first.
+- `ysc compile` now reads definitions files in the current format (`functions`, `yarnName`, `return.type`, `parameters`, `type`), as written by Yarn Spinner for Unity, Godot and Unreal and by `ysc generate-definitions`. Files in the older format (`Functions`, `YarnName`, `ReturnType`) still work.
+- `ysc compile` no longer crashes on definitions files with missing `documentation` or `parameters`, comments, trailing commas, or unreadable entries. It prints a warning naming the file and skips only what it can't use.
+- Parameters with types ysc can't declare ahead of compiling, such as `enum` and `instance`, are treated as `any`. Functions whose return type isn't `string`, `number`, `bool` or `any`, or that have parameters with default values, get their type worked out from how they're used, as before.
+- Variadic parameters (`isParamsArray`) are declared as variadic.
+- If two definitions files declare the same function, the first one is used and `ysc` prints a warning.
 
 ### Removed
 
