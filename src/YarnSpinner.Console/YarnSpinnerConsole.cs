@@ -412,6 +412,62 @@
             return rootCommand.Parse(args).Invoke();
         }
 
+        public const string WorkspaceRootEnvironmentVariable = "YARN_SPINNER_WORKSPACE_ROOT";
+
+        public static string WorkspaceRootFor(string projectPath)
+        {
+            var fromEnvironment = Environment.GetEnvironmentVariable(WorkspaceRootEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(fromEnvironment))
+            {
+                return TrimTrailingSeparators(Path.GetFullPath(fromEnvironment.Trim()));
+            }
+
+            var engineRoot = FindEngineProjectRoot(Path.GetDirectoryName(Path.GetFullPath(projectPath)));
+            return TrimTrailingSeparators(engineRoot ?? Directory.GetCurrentDirectory());
+        }
+
+        public static string FindEngineProjectRoot(string startDirectory)
+        {
+            var directory = string.IsNullOrEmpty(startDirectory) ? null : new DirectoryInfo(startDirectory);
+            while (directory != null)
+            {
+                if (IsEngineProjectRoot(directory))
+                {
+                    return directory.FullName;
+                }
+                directory = directory.Parent;
+            }
+            return null;
+        }
+
+        private static bool IsEngineProjectRoot(DirectoryInfo directory)
+        {
+            try
+            {
+                if (Directory.Exists(Path.Combine(directory.FullName, "Assets"))
+                    && Directory.Exists(Path.Combine(directory.FullName, "ProjectSettings")))
+                {
+                    return true;
+                }
+                if (File.Exists(Path.Combine(directory.FullName, "project.godot")))
+                {
+                    return true;
+                }
+                return directory.EnumerateFiles("*.uproject").Any();
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is System.Security.SecurityException)
+            {
+                return false;
+            }
+        }
+
+        private static string TrimTrailingSeparators(string path)
+        {
+            var root = Path.GetPathRoot(path) ?? string.Empty;
+            var trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return trimmed.Length < root.Length ? root : trimmed;
+        }
+
         // Compiles a given Yarn story. Designed to be called by runners or the
         // generic compile command. Does no writing.
         public static CompilationResult CompileProgram(FileInfo[] inputs)

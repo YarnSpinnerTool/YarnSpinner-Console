@@ -9,7 +9,7 @@ namespace YarnSpinnerConsole
     {
         public static void ListSources(FileInfo yarnproject)
         {
-            var project = Project.LoadFromFile(yarnproject.FullName);
+            var project = Project.LoadFromFile(yarnproject.FullName, YarnSpinnerConsole.WorkspaceRootFor(yarnproject.FullName));
             foreach (var file in project.SourceFiles)
             {
                 Console.WriteLine(Path.GetRelativePath(yarnproject.Directory.FullName, file));
