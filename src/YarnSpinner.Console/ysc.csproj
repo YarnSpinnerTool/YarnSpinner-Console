@@ -14,7 +14,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ysc</ToolCommandName>
     <PackageOutputPath>../../nupkg</PackageOutputPath>
-    <!-- <YarnSpinnerDevelopmentPath>../../../YarnSpinner</YarnSpinnerDevelopmentPath> -->
+    <YarnSpinnerDevelopmentPath>../../../YarnSpinner</YarnSpinnerDevelopmentPath>
 
     <Authors>Secret Lab Pty. Ltd. and Yarn Spinner contributors</Authors>
     <PackageDescription><![CDATA[Yarn Spinner is a tool for creating interactive dialogue for games. 

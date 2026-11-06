@@ -129,6 +129,8 @@ namespace YarnSpinnerConsole
 
                 var job = CompilationJob.CreateFromFiles(project.SourceFiles);
 
+                // TODO: create Project from new 'create project from file' API
+
                 job.LanguageVersion = project.FileVersion;
 
                 var functionDeclarations = DefinitionsReader.ReadFunctionDeclarations(project.DefinitionsFiles);

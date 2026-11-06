@@ -127,11 +127,12 @@
                 };
                 runCommand.Add(allowPreviewFeaturesOption);
 
-                runCommand.SetAction(parseResult => RunCommand.RunFiles(
+                runCommand.SetAction((parseResult, cancellationToken) => RunCommand.RunFiles(
                     parseResult.GetValue(inputsArgument),
                     parseResult.GetValue(startNodeOption),
                     parseResult.GetValue(autoAdvance),
-                    parseResult.GetValue(allowPreviewFeaturesOption)
+                    parseResult.GetValue(allowPreviewFeaturesOption),
+                    cancellationToken
                 ));
             }
 
