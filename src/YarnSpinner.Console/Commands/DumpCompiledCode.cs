@@ -29,7 +29,7 @@ namespace YarnSpinnerConsole
                 }
             };
 
-            Console.WriteLine(Yarn.Compiler.Utility.GetCompiledCodeAsString(compiledResults.Program, null, compiledResults));
+            Console.WriteLine(Yarn.Compiler.Utility.GetCompiledCodeAsString(compiledResults.Program, compiledResults));
         }
     }
 }

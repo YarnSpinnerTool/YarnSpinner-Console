@@ -13,11 +13,12 @@ namespace YarnSpinnerConsole
         public static void DumpTree(FileInfo[] input, DirectoryInfo outputDirectory, bool json)
         {
             var job = CompileCommand.GetCompilationJob(input);
-            foreach (var inputFile in job.Inputs.Select(file => new FileInfo(file.FileName)))
+            foreach (var inputFile in job.Inputs.Select(file => new FileInfo(file.Name)))
             {
                 var source = File.ReadAllText(inputFile.FullName);
 
-                var (result, diagnostics) = Utility.ParseSource(source);
+                var result = Utility.ParseSourceText(source, inputFile.FullName);
+
 
                 var fileName = Path.GetFileNameWithoutExtension(inputFile.Name);
                 var outputFilePath = Path.Combine(outputDirectory.FullName, fileName + "-ParseTree");
@@ -35,7 +36,7 @@ namespace YarnSpinnerConsole
                     outputFilePath = Path.ChangeExtension(outputFilePath, ".txt");
                 }
 
-                foreach (var diagnostic in diagnostics)
+                foreach (var diagnostic in result.Diagnostics)
                 {
                     Log.Diagnostic(diagnostic);
                 }
