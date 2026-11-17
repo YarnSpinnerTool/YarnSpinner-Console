@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+### [3.3.0] 2026-11-17
+
+### Added
+
 - `ysc` now expands `${workspaceRoot}` in a Yarn Project's `definitions` paths. The workspace root is the `YARN_SPINNER_WORKSPACE_ROOT` environment variable if it is set. Otherwise it's the nearest folder above the Yarn Project that is a Unity, Godot or Unreal project, and the current working directory if there isn't one.
 
 ### Changed
@@ -18,8 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Parameters with types ysc can't declare ahead of compiling, such as `enum` and `instance`, are treated as `any`. Functions whose return type isn't `string`, `number`, `bool` or `any`, or that have parameters with default values, get their type worked out from how they're used, as before.
 - Variadic parameters (`isParamsArray`) are declared as variadic.
 - If two definitions files declare the same function, the first one is used and `ysc` prints a warning.
-
-### Removed
 
 ## [3.2.2] 2026-05-05
 
