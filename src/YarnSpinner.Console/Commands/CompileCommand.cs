@@ -127,19 +127,7 @@ namespace YarnSpinnerConsole
 
                 var project = Project.LoadFromFile(inputs.First().FullName, YarnSpinnerConsole.WorkspaceRootFor(inputs.First().FullName));
 
-                var job = CompilationJob.CreateFromFiles(project.SourceFiles);
-
-                // TODO: create Project from new 'create project from file' API
-
-                job.LanguageVersion = project.FileVersion;
-
-                var functionDeclarations = DefinitionsReader.ReadFunctionDeclarations(project.DefinitionsFiles);
-                if (functionDeclarations.Count > 0)
-                {
-                    job.Declarations = job.Declarations.Concat(functionDeclarations);
-                }
-
-                return job;
+                return CompilationJob.CreateFromProject(project);
             }
             else
             {
