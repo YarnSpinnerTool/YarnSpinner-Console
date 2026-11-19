@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+## [3.3.1] 2026-11-19
+
+### Changed
+
+- Compilation jobs are now created from the `Project`, rather than from loose files.
+
 ### [3.3.0] 2026-11-17
 
 ### Added
